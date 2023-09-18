@@ -1,0 +1,6 @@
+{
+    "directorio_zip": "zip",
+    "directorio_gtfs": "gtfs",
+    "directorio_geojson": "geojson",
+    "feeds": "feeds.json"
+}
