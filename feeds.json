@@ -5,5 +5,12 @@
         "archivo": "bizkaibus.zip",
         "directorio": "bizkaibus",
         "geojson": "bizkaibus.geojson"
+    },
+    {
+        "nombre": "Euskotren",
+        "url": "https://www.geo.euskadi.eus/cartografia/DatosDescarga/Transporte/Moveuskadi/Euskotren/google_transit.zip",
+        "archivo": "euskotren.zip",
+        "directorio": "euskotren",
+        "geojson": "euskotren.geojson"
     }
 ]

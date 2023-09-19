@@ -70,6 +70,41 @@ def generar(gtfs):
             }
             
             geojson["features"].append(feature)
+    
+    # Guardar paradas
+    stops_list = csv_to_dict(os.path.join(directorio_gtfs, gtfs["directorio"], "stops.txt"))
+    for stop in stops_list:
+        lon = round(float(stop["stop_lon"]), 5) # Redondear a 5 decimales para ahorrar espacio
+        lat = round(float(stop["stop_lat"]), 5)
+
+        feature = {
+            "type": "Feature",
+            "geometry": {
+                "type": "Point",
+                "coordinates": [lon, lat]
+            },
+            "properties": {
+                "stop_id": stop["stop_id"],
+                "stop_name": stop["stop_name"],
+                "zone_id": stop["zone_id"],
+                "location_type": stop["location_type"],
+                "parent_station": stop["parent_station"],
+                "platform_code": stop["platform_code"]
+            }
+        }
+
+        # Actualizar bbox
+        if lon < bbox[0]: # minLon
+            bbox[0] = lon
+        elif lon > bbox[2]: # maxLon
+            bbox[2] = lon
+        if lat < bbox[1]: # minLat
+            bbox[1] = lat
+        elif lat > bbox[3]: # maxLat
+            bbox[3] = lat
+
+        geojson["features"].append(feature)
+
     # Guardar bbox final
     geojson["bbox"] = bbox
 
@@ -80,7 +115,7 @@ def generar(gtfs):
 
 def csv_to_dict(archivo):
     lista = []
-    with open(archivo) as datos_csv:
+    with open(archivo, encoding="UTF-8") as datos_csv:
         reader = csv.DictReader(datos_csv)
         for fila in reader:
             lista.append(fila)
