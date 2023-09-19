@@ -1,0 +1,12 @@
+services:
+  martin:
+    container_name: MartinServer
+    command:
+    - /tiles
+    image: ghcr.io/maplibre/martin:main
+    restart: always
+    ports:
+    - 3000:3000
+    volumes:
+    - ./tiles:/tiles
+version: '3'
