@@ -63,11 +63,15 @@ def generar(gtfs):
                     "route_id": route_id,
                     "agency_id": route["agency_id"],
                     "name": route["route_long_name"] if route["route_long_name"] else route["route_short_name"], # Si no hay nombre largo, usar el nombre corto
-                    "route_type": route["route_type"],
-                    "route_color": route["route_color"],
-                    "route_text_color": route["route_text_color"]
-                }
+                    "route_type": route["route_type"]
+                },
+                "tippecanoe" : { "layer" : "lineas" } # Establecer layer para tippecanoe
             }
+
+            if route["route_color"]:
+                feature["properties"]["route_color"] = route["route_color"] if route["route_color"][0] == '#' else "#"+route["route_color"]
+            if route["route_text_color"]:
+                feature["properties"]["route_text_color"] = route["route_text_color"] if route["route_text_color"][0] == '#' else "#"+route["route_text_color"]
             
             geojson["features"].append(feature)
     
@@ -90,7 +94,8 @@ def generar(gtfs):
                 "location_type": stop["location_type"],
                 "parent_station": stop["parent_station"],
                 "platform_code": stop["platform_code"]
-            }
+            },
+            "tippecanoe" : { "layer" : "paradas" } # Establecer layer para tippecanoe
         }
 
         # Actualizar bbox
