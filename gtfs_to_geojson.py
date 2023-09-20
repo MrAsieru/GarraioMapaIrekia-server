@@ -17,9 +17,9 @@ def generar(gtfs):
     }
 
     # Transformar routes.txt, trips.txt y shapes.txt a un diccionario
-    route_list = csv_to_dict(os.path.join(directorio_gtfs, gtfs["directorio"], "routes.txt"))
-    trip_list = csv_to_dict(os.path.join(directorio_gtfs, gtfs["directorio"], "trips.txt"))
-    shape_list = sorted(csv_to_dict(os.path.join(directorio_gtfs, gtfs["directorio"], "shapes.txt")), key=lambda k: int(k['shape_pt_sequence']))
+    route_list = csv_to_dict(os.path.join(directorio_gtfs, gtfs["id"], "routes.txt"))
+    trip_list = csv_to_dict(os.path.join(directorio_gtfs, gtfs["id"], "trips.txt"))
+    shape_list = sorted(csv_to_dict(os.path.join(directorio_gtfs, gtfs["id"], "shapes.txt")), key=lambda k: int(k['shape_pt_sequence']))
     shape_dict = {}
 
     # Incializar bbox con la primera coordenada
@@ -72,7 +72,7 @@ def generar(gtfs):
             geojson["features"].append(feature)
     
     # Guardar paradas
-    stops_list = csv_to_dict(os.path.join(directorio_gtfs, gtfs["directorio"], "stops.txt"))
+    stops_list = csv_to_dict(os.path.join(directorio_gtfs, gtfs["id"], "stops.txt"))
     for stop in stops_list:
         lon = round(float(stop["stop_lon"]), 5) # Redondear a 5 decimales para ahorrar espacio
         lat = round(float(stop["stop_lat"]), 5)
@@ -109,7 +109,7 @@ def generar(gtfs):
     geojson["bbox"] = bbox
 
     # write file
-    with open(os.path.join(directorio_geojson, gtfs["geojson"]), 'w') as outfile:
+    with open(os.path.join(directorio_geojson, gtfs["id"]+".geojson"), 'w') as outfile:
         json.dump(geojson, outfile)
 
 
@@ -129,6 +129,11 @@ def main():
 
     directorio_gtfs = os.path.join(os.getcwd(), config["directorio_gtfs"])
     directorio_geojson = os.path.join(os.getcwd(), config["directorio_geojson"])
+
+    try:
+        os.mkdir(directorio_geojson)
+    except FileExistsError:
+        pass
 
     feeds = []
     with open(os.path.join(os.getcwd(), config["feeds"])) as f:

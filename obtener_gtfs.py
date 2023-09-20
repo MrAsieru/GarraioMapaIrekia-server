@@ -9,12 +9,12 @@ directorio_gtfs = ""
 
 
 def descargar(gtfs):
-    urllib.request.urlretrieve(gtfs["url"], os.path.join(directorio_zip, gtfs["archivo"]))
+    urllib.request.urlretrieve(gtfs["url"], os.path.join(directorio_zip, gtfs["id"]+".zip"))
 
 
 def descomprimir(gtfs):
-    with zipfile.ZipFile(os.path.join(directorio_zip, gtfs["archivo"]), 'r') as zip_ref:
-        zip_ref.extractall(os.path.join(directorio_gtfs, gtfs["directorio"]))
+    with zipfile.ZipFile(os.path.join(directorio_zip, gtfs["id"]+".zip"), 'r') as zip_ref:
+        zip_ref.extractall(os.path.join(directorio_gtfs, gtfs["id"]))
 
 
 def main():
