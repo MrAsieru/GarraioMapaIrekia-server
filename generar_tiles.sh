@@ -7,4 +7,4 @@ for file in geojson/*.geojson; do
 done
 
 # Reiniciar servidor Martin
-sudo docker restart MartinServer
+sudo docker restart martin
