@@ -19,6 +19,12 @@ services:
     volumes:
       - mongodatabase:/data/db
       - ${HOME}/mongodb/init-mongo.sh:/docker-entrypoint-initdb.d/init-mongo.sh:ro
+  api:
+    container_name: "api"
+    build: "./api"
+    restart: "always"
+    ports:
+      - "8080:8080"
 volumes:
   mongodatabase:
 version: '3'

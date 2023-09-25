@@ -26,18 +26,17 @@ def guardar(gtfs, cliente: MongoClient):
     colleccion_rutas = db["routes"]
     colleccion_paradas = db["stops"]
 
-    print(agency_list)
     for agency_key in agency_list.keys():
         agency = agency_list[agency_key]
         doc = {
-            "id": agency.get("agency_id"),
-            "nombre": agency.get("agency_name"),
+            "agency_id": agency.get("agency_id"),
+            "name": agency.get("agency_name"),
             "url": agency.get("agency_url"),
-            "zona_horaria": agency.get("agency_timezone"),
-            "idioma": agency.get("agency_lang"),
-            "telefono": agency.get("agency_phone"),
+            "timezone": agency.get("agency_timezone"),
+            "lang": agency.get("agency_lang"),
+            "phone": agency.get("agency_phone"),
             "email": agency.get("agency_email"),
-            "url_tarifas": agency.get("agency_fare_url")
+            "fare_url": agency.get("agency_fare_url")
         }
         doc_id = colleccion_agency.insert_one(doc).inserted_id
         agency["mongodb_id"] = doc_id
@@ -45,21 +44,21 @@ def guardar(gtfs, cliente: MongoClient):
     for route_key in route_list.keys():
         route = route_list[route_key]
         doc = {
-            "id": route.get("route_id"),
-            "agencia": agency_list[route["agency_id"]].get("mongodb_id"),
-            "nombre": {
-                "corto": route.get("route_short_name"),
-                "largo": route.get("route_long_name")
+            "route_id": route.get("route_id"),
+            "agency": agency_list[route["agency_id"]].get("mongodb_id"),
+            "name": {
+                "short": route.get("route_short_name"),
+                "long": route.get("route_long_name")
             },
-            "descripcion": route.get("route_desc"),
-            "tipo": route.get("route_type"),
+            "desc": route.get("route_desc"),
+            "type": route.get("route_type"),
             "url": route.get("route_url"),
             "color": {
-                "fondo": route.get("route_color"),
-                "texto": route.get("route_text_color")
+                "color": route.get("route_color"),
+                "text": route.get("route_text_color")
             },
-            "orden": route.get("route_sort_order"),
-            "red_id": route.get("network_id")
+            "sort_order": route.get("route_sort_order"),
+            "network_id": route.get("network_id")
         }
         doc_id = colleccion_rutas.insert_one(doc).inserted_id
         route["mongodb_id"] = doc_id
@@ -67,22 +66,22 @@ def guardar(gtfs, cliente: MongoClient):
     for stop_key in stop_list.keys():
         stop = stop_list[stop_key]
         doc = {
-            "id": stop.get("stop_id"),
-            "codigo": stop.get("stop_code"),
-            "nombre": stop.get("stop_name"),
-            "descripcion": stop.get("stop_desc"),
-            "coordenadas": {
-                "latitud": stop.get("stop_lat"),
-                "longitud": stop.get("stop_lon")
+            "stop_id": stop.get("stop_id"),
+            "code": stop.get("stop_code"),
+            "name": stop.get("stop_name"),
+            "desc": stop.get("stop_desc"),
+            "coords": {
+                "lat": stop.get("stop_lat"),
+                "lon": stop.get("stop_lon")
             },
-            "zona": stop.get("zone_id"),
+            "zone_id": stop.get("zone_id"),
             "url": stop.get("stop_url"),
-            "tipo": stop.get("location_type"),
-            "parada_padre": stop.get("parent_station"),
-            "zona_horaria": stop.get("stop_timezone"),
-            "silla_ruedas": stop.get("wheelchair_boarding"),
-            "nivel": stop.get("level_id"),
-            "plataforma": stop.get("platform_code")
+            "location_type": stop.get("location_type"),
+            "parent_station": stop.get("parent_station"),
+            "stop_timezone": stop.get("stop_timezone"),
+            "wheelchair_boarding": stop.get("wheelchair_boarding"),
+            "level_id": stop.get("level_id"),
+            "platform_code": stop.get("platform_code")
         }
         doc_id = colleccion_paradas.insert_one(doc).inserted_id
         stop["mongodb_id"] = doc_id
