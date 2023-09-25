@@ -15,10 +15,10 @@ services:
     ports:
       - "27017:27017"
     restart: "always"
-    env_file: mongodb.env
+    env_file: mongodb/mongodb.env
     volumes:
       - mongodatabase:/data/db
-      - ${HOME}/init-mongo.sh:/docker-entrypoint-initdb.d/init-mongo.sh:ro
+      - ${HOME}/mongodb/init-mongo.sh:/docker-entrypoint-initdb.d/init-mongo.sh:ro
 volumes:
   mongodatabase:
 version: '3'
