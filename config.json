@@ -2,5 +2,6 @@
     "directorio_zip": "zip",
     "directorio_gtfs": "gtfs",
     "directorio_geojson": "geojson",
-    "feeds": "feeds.json"
+    "feeds": "feeds.json",
+    "nap_mitma_api_key": "ApiKey"
 }

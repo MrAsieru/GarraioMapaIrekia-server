@@ -62,15 +62,16 @@ def generar(gtfs):
                     "shape_id": shape_id,
                     "route_id": route_id,
                     "agency_id": route["agency_id"],
-                    "name": route["route_long_name"] if route["route_long_name"] else route["route_short_name"], # Si no hay nombre largo, usar el nombre corto
+                    "long_name": route.get("route_long_name"),
+                    "short_name": route.get("route_short_name"),
                     "route_type": route["route_type"]
                 },
                 "tippecanoe" : { "layer" : "lineas" } # Establecer layer para tippecanoe
             }
 
-            if route["route_color"]:
+            if route.get("route_color"):
                 feature["properties"]["route_color"] = route["route_color"] if route["route_color"][0] == '#' else "#"+route["route_color"]
-            if route["route_text_color"]:
+            if route.get("route_text_color"):
                 feature["properties"]["route_text_color"] = route["route_text_color"] if route["route_text_color"][0] == '#' else "#"+route["route_text_color"]
             
             geojson["features"].append(feature)
@@ -89,11 +90,11 @@ def generar(gtfs):
             },
             "properties": {
                 "stop_id": stop["stop_id"],
-                "stop_name": stop["stop_name"],
-                "zone_id": stop["zone_id"],
-                "location_type": stop["location_type"],
-                "parent_station": stop["parent_station"],
-                "platform_code": stop["platform_code"]
+                "stop_name": stop.get("stop_name"),
+                "zone_id": stop.get("zone_id"),
+                "location_type": stop.get("location_type"),
+                "parent_station": stop.get("parent_station"),
+                "platform_code": stop.get("platform_code")
             },
             "tippecanoe" : { "layer" : "paradas" } # Establecer layer para tippecanoe
         }

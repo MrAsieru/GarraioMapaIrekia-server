@@ -1,6 +1,34 @@
 [
     {
+        "id": "bizkaibus",
+        "sources": [
+            {
+                "type": "NAP_MITMA",
+                "conjuntoDatoId": "1061"
+            },
+            {
+                "type": "HTTP",
+                "url": "https://www.geo.euskadi.eus/cartografia/DatosDescarga/Transporte/Moveuskadi/Bizkaibus/google_transit.zip"
+            }
+            
+        ]
+    },
+    {
+        "id": "metrobilbao",
+        "sources": [
+            {
+                "type": "NAP_MITMA",
+                "conjuntoDatoId": "1066"
+            }
+        ]
+    },
+    {
         "id": "bilbobus",
-        "url": "https://www.geo.euskadi.eus/cartografia/DatosDescarga/Transporte/Moveuskadi/Bilbobus/google_transit.zip"
+        "sources": [
+            {
+                "type": "NAP_MITMA",
+                "conjuntoDatoId": "1259"
+            }
+        ]
     }
 ]

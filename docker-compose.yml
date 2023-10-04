@@ -48,6 +48,7 @@ services:
     networks:
       - network
   web-app:
+    container-build: "webapp"
     build: "./web"
     ports:
       - "8080"
