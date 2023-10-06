@@ -93,7 +93,8 @@ def actualizar_ids(gtfs):
             columnas_id = [col for col in reader.fieldnames if col[-3:] == "_id" or col == "parent_station"]
             for fila in reader: # Recorrer cada fila
                 for col in columnas_id: # Actualizar ids con el prefijo del gtfs
-                    fila[col] = gtfs["id"] + "_" + fila[col]
+                    if col != "parent_station" or fila[col] != '':
+                        fila[col] = gtfs["id"] + "_" + fila[col]
                 if anadir_agency_id:
                     fila["agency_id"] = agency_id_unico if agency_id_unico != None else gtfs["id"]
                 writer.writerow(fila)
