@@ -27,7 +27,7 @@ def guardar(gtfs, cliente: MongoClient):
     colleccion_paradas = db["stops"]
 
     for agency_key in agency_list.keys():
-        agency = agency_list[agency_key]
+        agency: dict = agency_list[agency_key]
         doc = {
             "agency_id": agency.get("agency_id"),
             "name": agency.get("agency_name"),
@@ -42,7 +42,7 @@ def guardar(gtfs, cliente: MongoClient):
         agency["mongodb_id"] = doc_id
 
     for route_key in route_list.keys():
-        route = route_list[route_key]
+        route: dict = route_list[route_key]
         doc = {
             "route_id": route.get("route_id"),
             "agency": agency_list[route["agency_id"]].get("mongodb_id"),
@@ -64,7 +64,7 @@ def guardar(gtfs, cliente: MongoClient):
         route["mongodb_id"] = doc_id
 
     for stop_key in stop_list.keys():
-        stop = stop_list[stop_key]
+        stop: dict = stop_list[stop_key]
         doc = {
             "stop_id": stop.get("stop_id"),
             "code": stop.get("stop_code"),
@@ -76,7 +76,7 @@ def guardar(gtfs, cliente: MongoClient):
             },
             "zone_id": stop.get("zone_id"),
             "url": stop.get("stop_url"),
-            "location_type": stop.get("location_type"),
+            "location_type": stop.get("location_type") if stop.get("location_type", "") != "" else "0",
             "parent_station": stop.get("parent_station"),
             "stop_timezone": stop.get("stop_timezone"),
             "wheelchair_boarding": stop.get("wheelchair_boarding"),
@@ -87,7 +87,7 @@ def guardar(gtfs, cliente: MongoClient):
         stop["mongodb_id"] = doc_id
 
 
-def csv_to_dict(archivo, primary_key: list):
+def csv_to_dict(archivo, primary_key: list) -> dict:
     diccionario = {}
     with open(archivo, encoding="UTF-8") as datos_csv:
         reader = csv.DictReader(datos_csv)

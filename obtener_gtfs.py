@@ -77,10 +77,13 @@ def actualizar_ids(gtfs):
         nuevo = os.path.join(directorio_gtfs, gtfs["id"], file + 'tmp')
 
         # Leer el archivo
+        print(file)
         with open(original, 'r', encoding='UTF-8') as f_in, open(nuevo, 'w', newline='', encoding='UTF-8') as f_out:
             reader = csv.DictReader(f_in)
+            reader.fieldnames = [field.strip() for field in reader.fieldnames] # Algunos archivos tienen espacios entre las columnas, de esta manera se eliminan estos espacios
             
             headers = set(reader.fieldnames)
+            # Añadir agency_id en caso de que no esté
             anadir_agency_id = False
             if file in archivos_agency_id and "agency_id" not in reader.fieldnames:
                 # Incluir siempre agency_id
@@ -92,8 +95,9 @@ def actualizar_ids(gtfs):
             
             columnas_id = [col for col in reader.fieldnames if col[-3:] == "_id" or col == "parent_station"]
             for fila in reader: # Recorrer cada fila
-                for col in columnas_id: # Actualizar ids con el prefijo del gtfs
-                    if col != "parent_station" or fila[col] != '':
+                for col in reader.fieldnames:
+                    fila[col] = fila[col].strip() if fila[col] != None else fila[col] # Limpiar columna de espacio innecesarios
+                    if col in columnas_id and (col != "parent_station" or fila[col] != ''): # Actualizar ids con el prefijo del gtfs
                         fila[col] = gtfs["id"] + "_" + fila[col]
                 if anadir_agency_id:
                     fila["agency_id"] = agency_id_unico if agency_id_unico != None else gtfs["id"]
