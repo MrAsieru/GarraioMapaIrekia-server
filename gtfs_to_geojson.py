@@ -26,8 +26,8 @@ def generar(gtfs):
 
     # Guardar paradas
     for stop in stops_list:
-        lon = round(float(stop["stop_lon"]), 5) # Redondear a 5 decimales para ahorrar espacio
-        lat = round(float(stop["stop_lat"]), 5)
+        lon = round(float(stop.get("stop_lon")), 5) # Redondear a 5 decimales para ahorrar espacio
+        lat = round(float(stop.get("stop_lat")), 5)
 
         feature = {
             "type": "Feature",
@@ -37,7 +37,7 @@ def generar(gtfs):
             },
             "properties": {
                 "stop_id": stop["stop_id"],
-                "stop_name": stop.get("stop_name"),
+                "name": stop.get("stop_name"),
                 "zone_id": stop.get("zone_id"),
                 "location_type": stop.get("location_type") if stop.get("location_type", "") != "" else "0",
                 "parent_station": stop.get("parent_station"),
@@ -87,12 +87,12 @@ def generar(gtfs):
         # Agregar los shapes a geojson
         for shape_id in shape_dict.keys():
             # Obtener las rutas a partir de los viajes que usan el shape
-            routes = [y for y in route_list if y["route_id"] in [x["route_id"] for x in trip_list if x["shape_id"] == shape_id]]
+            routes = [r for r in route_list if r["route_id"] in [t["route_id"] for t in trip_list if t.get("shape_id") == shape_id]]
             route_ids = set([route["route_id"] for route in routes])
 
             # Crear feature (en caso de que el shape tenga más de una ruta asociada, se creará una feature por cada una)
             for route_id in route_ids:
-                route = [x for x in routes if x["route_id"] == route_id][0]
+                route = [r for r in routes if r["route_id"] == route_id][0]
                 feature = {
                     "type": "Feature",
                     "geometry": {
@@ -105,16 +105,13 @@ def generar(gtfs):
                         "agency_id": route["agency_id"],
                         "long_name": route.get("route_long_name"),
                         "short_name": route.get("route_short_name"),
-                        "route_type": route["route_type"]
+                        "type": route["route_type"],
+                        "color": route.get("route_color") if route.get("route_color", "").startswith('#') else "#"+route.get("route_color", ""),
+                        "text_color": route.get("route_text_color") if route.get("route_text_color", "").startswith('#') else "#"+route.get("route_text_color", "")
                     },
                     "tippecanoe" : { "layer" : "lineas" } # Establecer layer para tippecanoe
                 }
 
-                if route.get("route_color"):
-                    feature["properties"]["route_color"] = route["route_color"] if route["route_color"][0] == '#' else "#"+route["route_color"]
-                if route.get("route_text_color"):
-                    feature["properties"]["route_text_color"] = route["route_text_color"] if route["route_text_color"][0] == '#' else "#"+route["route_text_color"]
-                
                 geojson["features"].append(feature)
 
     # Guardar bbox final

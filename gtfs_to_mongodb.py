@@ -45,18 +45,15 @@ def guardar(gtfs, cliente: MongoClient):
         route: dict = route_list[route_key]
         doc = {
             "route_id": route.get("route_id"),
+            "agency_id": route.get("agency_id"),
             "agency": agency_list[route["agency_id"]].get("mongodb_id"),
-            "name": {
-                "short": route.get("route_short_name"),
-                "long": route.get("route_long_name")
-            },
+            "short_name": route.get("route_short_name"),
+            "long_name": route.get("route_long_name"),
             "desc": route.get("route_desc"),
             "type": route.get("route_type"),
             "url": route.get("route_url"),
-            "color": {
-                "color": route.get("route_color"),
-                "text": route.get("route_text_color")
-            },
+            "color": route.get("route_color") if route.get("route_color", "").startswith('#') else "#"+route.get("route_color", ""),
+            "text_color": route.get("route_text_color") if route.get("route_text_color", "").startswith('#') else "#"+route.get("route_text_color", ""),
             "sort_order": route.get("route_sort_order"),
             "network_id": route.get("network_id")
         }
@@ -70,15 +67,13 @@ def guardar(gtfs, cliente: MongoClient):
             "code": stop.get("stop_code"),
             "name": stop.get("stop_name"),
             "desc": stop.get("stop_desc"),
-            "coords": {
-                "lat": stop.get("stop_lat"),
-                "lon": stop.get("stop_lon")
-            },
+            "coords_lat": stop.get("stop_lat"),
+            "coords_lon": stop.get("stop_lon"),
             "zone_id": stop.get("zone_id"),
             "url": stop.get("stop_url"),
             "location_type": stop.get("location_type") if stop.get("location_type", "") != "" else "0",
             "parent_station": stop.get("parent_station"),
-            "stop_timezone": stop.get("stop_timezone"),
+            "timezone": stop.get("stop_timezone"),
             "wheelchair_boarding": stop.get("wheelchair_boarding"),
             "level_id": stop.get("level_id"),
             "platform_code": stop.get("platform_code")
