@@ -9,8 +9,13 @@ directorio_gtfs = ""
 directorio_geojson = ""
 
 def conectar():
-    # uri = f"mongodb://{os.environ['MONGODB_SERVER_USER']}:{os.environ['MONGODB_SERVER_USER_PASSWORD']}@127.0.0.1:27017/{os.environ['MONGODB_INITDB_DATABASE']}"
-    uri = f"mongodb://serverUser:serverUser@192.168.1.10:27017/it0"
+    if not os.environ.get('MONGODB_SERVER_USER') is None:
+        # Prod
+        uri = f"mongodb://{os.environ['MONGODB_SERVER_USER']}:{os.environ['MONGODB_SERVER_USER_PASSWORD']}@127.0.0.1:27017/{os.environ['MONGODB_INITDB_DATABASE']}"
+    else:
+        #TODO: Quitar
+        uri = f"mongodb://serverUser:serverUser@192.168.1.10:27017/it0"
+    
     cliente = MongoClient(uri, server_api=ServerApi('1'))
 
     return cliente
