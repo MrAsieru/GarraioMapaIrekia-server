@@ -1,8 +1,13 @@
 import os
 import json
 import csv
+from pathlib import Path
+from dotenv import load_dotenv
 from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
+from pymongo.database import Database
+from pymongo.collection import Collection
+from pymongo.typings import _DocumentType
 
 config = {}
 directorio_gtfs = ""
@@ -13,20 +18,18 @@ def conectar():
         # Prod
         uri = f"mongodb://{os.environ['MONGODB_SERVER_USER']}:{os.environ['MONGODB_SERVER_USER_PASSWORD']}@127.0.0.1:27017/{os.environ['MONGODB_INITDB_DATABASE']}"
     else:
-        #TODO: Quitar
-        uri = f"mongodb://serverUser:serverUser@192.168.1.10:27017/it0"
+        #TODO: Quitar (Solo para pruebas)
+        uri = f"mongodb://serverUser:serverUser@192.168.1.10:27017/gtfs"
     
     cliente = MongoClient(uri, server_api=ServerApi('1'))
 
     return cliente
 
-def guardar(gtfs, cliente: MongoClient):
+def guardar(gtfs, db: Database[_DocumentType]):
     agency_list = csv_to_dict(os.path.join(directorio_gtfs, gtfs["id"], "agency.txt"), ["agency_id"])
     route_list = csv_to_dict(os.path.join(directorio_gtfs, gtfs["id"], "routes.txt"), ["route_id"])
     stop_list = csv_to_dict(os.path.join(directorio_gtfs, gtfs["id"], "stops.txt"), ["stop_id"])
-
-    # db = cliente[os.environ['MONGODB_INITDB_DATABASE']]
-    db = cliente["it0"]
+    
     colleccion_agency = db["agencies"]
     colleccion_rutas = db["routes"]
     colleccion_paradas = db["stops"]
@@ -86,6 +89,8 @@ def guardar(gtfs, cliente: MongoClient):
         doc_id = colleccion_paradas.insert_one(doc).inserted_id
         stop["mongodb_id"] = doc_id
 
+    db["feeds"].update_one({"id": gtfs["id"]}, {"$set": {"actualizar": False}})
+
 
 def csv_to_dict(archivo, primary_key: list) -> dict:
     diccionario = {}
@@ -98,24 +103,27 @@ def csv_to_dict(archivo, primary_key: list) -> dict:
 
 def main():
     global config, directorio_gtfs, directorio_geojson
+    load_dotenv(dotenv_path=Path('./mongodb/mongodb.env'))
     with open('config.json') as f:
         config = json.load(f)
 
     directorio_gtfs = os.path.join(os.getcwd(), config["directorio_gtfs"])
 
-    feeds = []
-    with open(os.path.join(os.getcwd(), config["feeds"])) as f:
-        feeds = json.load(f)
-
     cliente = conectar()
     # Limpiar base de datos
-    # for colleccion in cliente[os.environ['MONGODB_INITDB_DATABASE']].list_collection_names():
-    for colleccion in cliente["it0"].list_collection_names():
-        # cliente[os.environ['MONGODB_INITDB_DATABASE']].drop_collection(colleccion)
-        cliente["it0"].drop_collection(colleccion)
+    if not os.environ.get('MONGODB_SERVER_USER') is None:
+        db = cliente[os.environ['MONGODB_INITDB_DATABASE']]
+    else:
+        #TODO: Quitar (Solo para pruebas)
+        db = cliente["gtfs"]
 
-    for feed in feeds:
-        guardar(feed, cliente)
+    # Eliminar documentos que contengan id con el prefijo de los feeds que se deben actualizar
+    feeds_actualizar_ids = db["feeds"].distinct("id", {"actualizar": True})
+    for colleccion in ["agencies", "routes", "stops"]:
+        db[colleccion].delete_many({"id": {"$regex": f"^{('|'.join(feeds_actualizar_ids))}_"}})
+
+    for feed in db["feeds"].find({"actualizar": True}):
+        guardar(feed, db)
 
 
 if __name__ == '__main__':

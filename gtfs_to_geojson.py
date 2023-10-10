@@ -1,3 +1,4 @@
+from pathlib import Path
 import urllib.request
 import zipfile
 import os
@@ -5,9 +6,26 @@ import json
 import csv
 from typing import List
 
+from dotenv import load_dotenv
+from pymongo.mongo_client import MongoClient
+from pymongo.server_api import ServerApi
+
 config = {}
 directorio_gtfs = ""
 directorio_geojson = ""
+
+
+def conectar() -> MongoClient:
+    if not os.environ.get('MONGODB_SERVER_USER') is None:
+        # Prod
+        uri = f"mongodb://{os.environ['MONGODB_SERVER_USER']}:{os.environ['MONGODB_SERVER_USER_PASSWORD']}@127.0.0.1:27017/{os.environ['MONGODB_INITDB_DATABASE']}"
+    else:
+        #TODO: Quitar (Solo para pruebas)
+        uri = f"mongodb://serverUser:serverUser@192.168.1.10:27017/gtfs"
+    
+    cliente = MongoClient(uri, server_api=ServerApi('1'))
+
+    return cliente
 
 
 def generar(gtfs):
@@ -133,6 +151,7 @@ def csv_to_dict(archivo) -> List[dict]:
 
 def main():
     global config, directorio_gtfs, directorio_geojson
+    load_dotenv(dotenv_path=Path('./mongodb/mongodb.env'))
     with open('config.json') as f:
         config = json.load(f)
 
@@ -144,11 +163,13 @@ def main():
     except FileExistsError:
         pass
 
-    feeds = []
-    with open(os.path.join(os.getcwd(), config["feeds"])) as f:
-        feeds = json.load(f)
+    cliente = conectar()
+    if not os.environ.get('MONGODB_SERVER_USER') is None:
+        db = cliente[os.environ['MONGODB_INITDB_DATABASE']]
+    else:
+        db = cliente["gtfs"]
 
-    for feed in feeds:
+    for feed in db["feeds"].find({"actualizar": True}):
         generar(feed)
 
 

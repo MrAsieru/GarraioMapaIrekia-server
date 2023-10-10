@@ -6,9 +6,7 @@ sudo apt install python3-pip -y
 sudo pip3 install -r ./requirements.txt -r ./api/requirements.txt
 
 # Establecer variables de entorno
-source ./.env
 source ./mongodb/mongodb.env
-
 
 # Iniciar servidor
 docker compose up -d
