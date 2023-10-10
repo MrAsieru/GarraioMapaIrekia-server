@@ -10,6 +10,10 @@ services:
     volumes:
       - ${HOME}/nginx/nginx.conf:/etc/nginx/nginx.conf
       # - ${HOME}/ssl:/ssl/
+    depends_on:
+      - martin
+      - api
+      - web-app
     networks:
       - network
   martin:
@@ -22,8 +26,6 @@ services:
     - "3000"
     volumes:
     - "./tiles:/tiles"
-    depends_on:
-      - nginx
     networks:
       - network
   mongodb:
@@ -36,8 +38,6 @@ services:
     volumes:
       - mongodatabase:/data/db
       - ${HOME}/mongodb/init-mongo.sh:/docker-entrypoint-initdb.d/init-mongo.sh:ro
-    depends_on:
-      - nginx
     networks:
       - network
   api:
@@ -47,23 +47,16 @@ services:
     env_file: mongodb/mongodb.env
     ports:
       - "8081"
-    depends_on:
-      - nginx
-      - mongodb
     networks:
       - network
   web-app:
     container_name: "webapp"
     build: "./web"
+    restart: "always"
     ports:
       - "8080"
     volumes:
       - ${HOME}/web/nginx.conf:/etc/nginx/nginx.conf
-    depends_on:
-      - nginx
-      - api
-      - mongodb
-      - martin
     networks:
       - network
 volumes:
