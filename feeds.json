@@ -1,33 +1,262 @@
 [
     {
-        "id": "bizkaibus",
+        "id": "Alavabus",
         "sources": [
             {
                 "type": "NAP_MITMA",
-                "conjuntoDatoId": "1061"
-            },
-            {
-                "type": "HTTP",
-                "url": "https://www.geo.euskadi.eus/cartografia/DatosDescarga/Transporte/Moveuskadi/Bizkaibus/google_transit.zip"
-            }
-            
-        ]
-    },
-    {
-        "id": "metrobilbao",
-        "sources": [
-            {
-                "type": "NAP_MITMA",
-                "conjuntoDatoId": "1066"
+                "conjuntoDatoId": 1161
             }
         ]
     },
     {
-        "id": "bilbobus",
+        "id": "ALSA autobuses",
         "sources": [
             {
                 "type": "NAP_MITMA",
-                "conjuntoDatoId": "1259"
+                "conjuntoDatoId": 932
+            }
+        ]
+    },
+    {
+        "id": "Autob\u00fas en Cantabria",
+        "sources": [
+            {
+                "type": "NAP_MITMA",
+                "conjuntoDatoId": 1363
+            }
+        ]
+    },
+    {
+        "id": "Autobuses La Uni\u00f3n (ALU)",
+        "sources": [
+            {
+                "type": "NAP_MITMA",
+                "conjuntoDatoId": 1065
+            }
+        ]
+    },
+    {
+        "id": "Bilbobus",
+        "sources": [
+            {
+                "type": "NAP_MITMA",
+                "conjuntoDatoId": 1259
+            }
+        ]
+    },
+    {
+        "id": "Bizkaibus",
+        "sources": [
+            {
+                "type": "NAP_MITMA",
+                "conjuntoDatoId": 1061
+            }
+        ]
+    },
+    {
+        "id": "Cercan\u00edas Renfe",
+        "sources": [
+            {
+                "type": "NAP_MITMA",
+                "conjuntoDatoId": 929
+            }
+        ]
+    },
+    {
+        "id": "Donostiabus (Dbus)",
+        "sources": [
+            {
+                "type": "NAP_MITMA",
+                "conjuntoDatoId": 995
+            }
+        ]
+    },
+    {
+        "id": "Euskotren",
+        "sources": [
+            {
+                "type": "NAP_MITMA",
+                "conjuntoDatoId": 1062
+            }
+        ]
+    },
+    {
+        "id": "Funicular de Artxanda",
+        "sources": [
+            {
+                "type": "NAP_MITMA",
+                "conjuntoDatoId": 1063
+            }
+        ]
+    },
+    {
+        "id": "Lurraldebus Arrasate",
+        "sources": [
+            {
+                "type": "NAP_MITMA",
+                "conjuntoDatoId": 997
+            }
+        ]
+    },
+    {
+        "id": "Lurraldebus auif",
+        "sources": [
+            {
+                "type": "NAP_MITMA",
+                "conjuntoDatoId": 998
+            }
+        ]
+    },
+    {
+        "id": "Lurraldebus Eibar",
+        "sources": [
+            {
+                "type": "NAP_MITMA",
+                "conjuntoDatoId": 999
+            }
+        ]
+    },
+    {
+        "id": "Lurraldebus Ekialdebus",
+        "sources": [
+            {
+                "type": "NAP_MITMA",
+                "conjuntoDatoId": 1000
+            }
+        ]
+    },
+    {
+        "id": "Lurraldebus Euskotren bus",
+        "sources": [
+            {
+                "type": "NAP_MITMA",
+                "conjuntoDatoId": 1001
+            }
+        ]
+    },
+    {
+        "id": "Lurraldebus Goierrialdea",
+        "sources": [
+            {
+                "type": "NAP_MITMA",
+                "conjuntoDatoId": 1028
+            }
+        ]
+    },
+    {
+        "id": "Lurraldebus Guipuzcoana",
+        "sources": [
+            {
+                "type": "NAP_MITMA",
+                "conjuntoDatoId": 1003
+            }
+        ]
+    },
+    {
+        "id": "Lurraldebus Hernani",
+        "sources": [
+            {
+                "type": "NAP_MITMA",
+                "conjuntoDatoId": 1029
+            }
+        ]
+    },
+    {
+        "id": "Lurraldebus Lasarte",
+        "sources": [
+            {
+                "type": "NAP_MITMA",
+                "conjuntoDatoId": 1030
+            }
+        ]
+    },
+    {
+        "id": "Lurraldebus Oiartzun",
+        "sources": [
+            {
+                "type": "NAP_MITMA",
+                "conjuntoDatoId": 1031
+            }
+        ]
+    },
+    {
+        "id": "Lurraldebus Pesa",
+        "sources": [
+            {
+                "type": "NAP_MITMA",
+                "conjuntoDatoId": 1032
+            }
+        ]
+    },
+    {
+        "id": "Lurraldebus Renter\u00eda",
+        "sources": [
+            {
+                "type": "NAP_MITMA",
+                "conjuntoDatoId": 1033
+            }
+        ]
+    },
+    {
+        "id": "Lurraldebus TBH (Interurbano Tolosa Buruntzaldea)",
+        "sources": [
+            {
+                "type": "NAP_MITMA",
+                "conjuntoDatoId": 1393
+            }
+        ]
+    },
+    {
+        "id": "Lurraldebus Tolosaldea",
+        "sources": [
+            {
+                "type": "NAP_MITMA",
+                "conjuntoDatoId": 1034
+            }
+        ]
+    },
+    {
+        "id": "Lurraldebus Zarautz",
+        "sources": [
+            {
+                "type": "NAP_MITMA",
+                "conjuntoDatoId": 1036
+            }
+        ]
+    },
+    {
+        "id": "Metro Bilbao",
+        "sources": [
+            {
+                "type": "NAP_MITMA",
+                "conjuntoDatoId": 1066
+            }
+        ]
+    },
+    {
+        "id": "RENFE - Media, Larga Distancia y AVE",
+        "sources": [
+            {
+                "type": "NAP_MITMA",
+                "conjuntoDatoId": 897
+            }
+        ]
+    },
+    {
+        "id": "Transbordador Puente Bizkaia",
+        "sources": [
+            {
+                "type": "NAP_MITMA",
+                "conjuntoDatoId": 1069
+            }
+        ]
+    },
+    {
+        "id": "Transportes Urbanos de Vitoria (TUVISA)",
+        "sources": [
+            {
+                "type": "NAP_MITMA",
+                "conjuntoDatoId": 1070
             }
         ]
     }

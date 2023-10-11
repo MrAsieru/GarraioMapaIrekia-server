@@ -142,7 +142,7 @@ def generar(gtfs):
 
 def csv_to_dict(archivo) -> List[dict]:
     lista = []
-    with open(archivo, encoding="UTF-8") as datos_csv:
+    with open(archivo, encoding="utf-8-sig") as datos_csv:
         reader = csv.DictReader(datos_csv)
         for fila in reader:
             lista.append(fila)

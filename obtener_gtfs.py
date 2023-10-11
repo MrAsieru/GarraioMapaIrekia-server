@@ -137,7 +137,7 @@ def adaptar_datos(gtfs):
     # Obtener agency_id de agency.txt en caso de contener una sola agencia y no ser necesario referenciar agency_id en otros archivos
     agency_id_unico = None # Se usará para almacenar el agency_id en caso de que solo haya una agencia en el feed
     if "agency.txt" in os.listdir(os.path.join(directorio_gtfs, gtfs["id"])):
-        with open(os.path.join(directorio_gtfs, gtfs["id"], "agency.txt"), 'r', encoding='UTF-8') as f:
+        with open(os.path.join(directorio_gtfs, gtfs["id"], "agency.txt"), 'r', encoding="utf-8-sig") as f:
             reader = csv.DictReader(f)
             agencias = []
             for fila in reader:
@@ -154,7 +154,7 @@ def adaptar_datos(gtfs):
         nuevo = os.path.join(directorio_gtfs, gtfs["id"], file + 'tmp')
 
         # Leer el archivo
-        with open(original, 'r', encoding='UTF-8') as f_in, open(nuevo, 'w', newline='', encoding='UTF-8') as f_out:
+        with open(original, 'r', encoding="utf-8-sig") as f_in, open(nuevo, 'w', newline='', encoding="UTF-8") as f_out:
             reader = csv.DictReader(f_in)
             reader.fieldnames = [field.strip() for field in reader.fieldnames] # Algunos archivos tienen espacios entre las columnas, de esta manera se eliminan estos espacios
             
@@ -170,11 +170,15 @@ def adaptar_datos(gtfs):
             writer.writeheader()
             
             columnas_id = [col for col in reader.fieldnames if col[-3:] == "_id" or col == "parent_station"]
+            contador_orden = 0
             for fila in reader: # Recorrer cada fila
                 for col in reader.fieldnames:
                     fila[col] = fila[col].strip() if fila[col] != None else fila[col] # Limpiar columna de espacio innecesarios
                     if col in columnas_id and (col != "parent_station" or fila[col] != ''): # Actualizar ids con el prefijo del gtfs
                         fila[col] = gtfs["id"] + "_" + fila[col]
+                    if col == "route_sort_order" and fila[col] == "": # Actualizar route_sort_order en caso de que no tenga valor
+                        fila[col] = contador_orden
+                        contador_orden += 1
                 if anadir_agency_id:
                     fila["agency_id"] = agency_id_unico if agency_id_unico != None else gtfs["id"]
                 writer.writerow(fila)
