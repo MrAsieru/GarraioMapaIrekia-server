@@ -36,10 +36,10 @@ def generar(gtfs):
     }
 
     # Transformar stops.txt a un diccionario
-    stops_list = csv_to_dict(os.path.join(directorio_gtfs, gtfs["id"], "stops.txt"))
+    stops_list = csv_to_dict(os.path.join(directorio_gtfs, gtfs["idFeed"], "stops.txt"))
 
     # Incializar bbox con la primera coordenada
-    print(gtfs["id"])
+    print(gtfs["idFeed"])
     bbox = [round(float(stops_list[0]["stop_lon"]), 5), round(float(stops_list[0]["stop_lat"]), 5), round(float(stops_list[0]["stop_lon"]), 5), round(float(stops_list[0]["stop_lat"]), 5)]
 
     # Guardar paradas
@@ -77,11 +77,11 @@ def generar(gtfs):
         geojson["features"].append(feature)
 
     # Comprobar si existe shapes.txt
-    if os.path.isfile(os.path.join(directorio_gtfs, gtfs["id"], "shapes.txt")):
+    if os.path.isfile(os.path.join(directorio_gtfs, gtfs["idFeed"], "shapes.txt")):
         # Transformar routes.txt, trips.txt y shapes.txt a un diccionario
-        route_list = csv_to_dict(os.path.join(directorio_gtfs, gtfs["id"], "routes.txt"))
-        trip_list = csv_to_dict(os.path.join(directorio_gtfs, gtfs["id"], "trips.txt"))
-        shape_list = sorted(csv_to_dict(os.path.join(directorio_gtfs, gtfs["id"], "shapes.txt")), key=lambda k: int(k['shape_pt_sequence']))
+        route_list = csv_to_dict(os.path.join(directorio_gtfs, gtfs["idFeed"], "routes.txt"))
+        trip_list = csv_to_dict(os.path.join(directorio_gtfs, gtfs["idFeed"], "trips.txt"))
+        shape_list = sorted(csv_to_dict(os.path.join(directorio_gtfs, gtfs["idFeed"], "shapes.txt")), key=lambda k: int(k['shape_pt_sequence']))
         shape_dict = {}
 
         # Crear un diccionario con los shapes y sus coordenadas
@@ -136,7 +136,7 @@ def generar(gtfs):
     geojson["bbox"] = bbox
 
     # write file
-    with open(os.path.join(directorio_geojson, gtfs["id"]+".geojson"), 'w') as outfile:
+    with open(os.path.join(directorio_geojson, gtfs["idFeed"]+".geojson"), 'w') as outfile:
         json.dump(geojson, outfile)
 
 

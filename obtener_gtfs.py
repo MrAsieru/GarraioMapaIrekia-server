@@ -35,14 +35,14 @@ def conectar() -> MongoClient:
 
 
 def sincronizar_feeds(db_feeds: Collection[_DocumentType], file_feeds: List[dict]):
-    # Obtener ids de feeds en la base de datos y en el fichero
-    db_feeds_ids = db_feeds.distinct("id")
-    file_feeds_ids = [feed["id"] for feed in file_feeds]
-    feeds_nuevos = [feed for feed in file_feeds if feed["id"] not in db_feeds_ids]
+    # Obtener idFeeds de feeds en la base de datos y en el fichero
+    db_feeds_idFeeds = db_feeds.distinct("idFeed")
+    file_feeds_idFeeds = [feed["idFeed"] for feed in file_feeds]
+    feeds_nuevos = [feed for feed in file_feeds if feed["idFeed"] not in db_feeds_idFeeds]
 
     # Eliminar feeds que no existen en el fichero
-    if len(db_feeds_ids) > 0:
-        db_feeds.delete_many({"id": {"$nin": file_feeds_ids}})
+    if len(db_feeds_idFeeds) > 0:
+        db_feeds.delete_many({"idFeed": {"$nin": file_feeds_idFeeds}})
 
     # Añadir feeds que no existen en la base de datos
     if len(feeds_nuevos) > 0:
@@ -51,10 +51,10 @@ def sincronizar_feeds(db_feeds: Collection[_DocumentType], file_feeds: List[dict
 
 def descargar(gtfs: dict, config: dict, db_feeds: Collection[_DocumentType]) -> bool:
     actualizar = False
-    archivo_zip = os.path.join(directorio_zip, gtfs["id"]+".zip")
+    archivo_zip = os.path.join(directorio_zip, gtfs["idFeed"]+".zip")
     for descarga in gtfs["sources"]:
         error = False
-        print(gtfs["id"])
+        print(gtfs["idFeed"])
         if (descarga["type"] == "HTTP"):
             print("HTTP")
             respuesta = requests.request("GET", descarga["url"])
@@ -66,7 +66,7 @@ def descargar(gtfs: dict, config: dict, db_feeds: Collection[_DocumentType]) -> 
                     with open(archivo_zip, 'wb') as f:
                         f.write(respuesta.content)
                     # Actualizar MD5
-                    db_feeds.update_one({"id": gtfs["id"]}, {"$set": {"MD5": md5, "actualizar": True}})
+                    db_feeds.update_one({"idFeed": gtfs["idFeed"]}, {"$set": {"MD5": md5, "actualizar": True}})
                     actualizar = True
             else:
                 error = True
@@ -86,7 +86,7 @@ def descargar(gtfs: dict, config: dict, db_feeds: Collection[_DocumentType]) -> 
                             f.write(respuesta.content)
 
                         # Actualizar etag
-                        db_feeds.update_one({"id": gtfs["id"]}, {"$set": {"etag": respuesta.headers.get("etag"), "actualizar": True}})
+                        db_feeds.update_one({"idFeed": gtfs["idFeed"]}, {"$set": {"etag": respuesta.headers.get("etag"), "actualizar": True}})
                         actualizar = True  
                     else:
                         error = True
@@ -96,7 +96,7 @@ def descargar(gtfs: dict, config: dict, db_feeds: Collection[_DocumentType]) -> 
             print("NAP_MITMA")
             # Obtener información del conjunto de datos
             url_info = f"https://nap.mitma.es/api/Fichero/{descarga['conjuntoDatoId']}"
-            headers = {"ApiKey": config.get("nap_mitma_api_key")}
+            headers = {"ApiKey": config.get("nap_mitma_api_key"), "Accept": "application/json"}
             info_conjunto = requests.request("GET", url_info, headers=headers)
             print(info_conjunto)
             if (info_conjunto.status_code == 200):
@@ -113,7 +113,7 @@ def descargar(gtfs: dict, config: dict, db_feeds: Collection[_DocumentType]) -> 
                             f.write(fichero.content)
 
                         # Actualizar fecha de actualización
-                        db_feeds.update_one({"id": gtfs["id"]}, {"$set": {"fechaActualizacion": info_conjunto.get('ficherosDto', [{}])[0].get('fechaActualizacion'), "actualizar": True}})
+                        db_feeds.update_one({"idFeed": gtfs["idFeed"]}, {"$set": {"fechaActualizacion": info_conjunto.get('ficherosDto', [{}])[0].get('fechaActualizacion'), "actualizar": True}})
                         actualizar = True
                     else:
                         error = True
@@ -126,32 +126,32 @@ def descargar(gtfs: dict, config: dict, db_feeds: Collection[_DocumentType]) -> 
 
 
 def descomprimir(gtfs):
-    with zipfile.ZipFile(os.path.join(directorio_zip, gtfs["id"]+".zip"), 'r') as zip_ref:
-        if os.path.exists(os.path.join(directorio_gtfs, gtfs["id"])):
-            shutil.rmtree(os.path.join(directorio_gtfs, gtfs["id"]))
-        zip_ref.extractall(os.path.join(directorio_gtfs, gtfs["id"]))
+    with zipfile.ZipFile(os.path.join(directorio_zip, gtfs["idFeed"]+".zip"), 'r') as zip_ref:
+        if os.path.exists(os.path.join(directorio_gtfs, gtfs["idFeed"])):
+            shutil.rmtree(os.path.join(directorio_gtfs, gtfs["idFeed"]))
+        zip_ref.extractall(os.path.join(directorio_gtfs, gtfs["idFeed"]))
 
 
 # Asegurar IDs unicos para toda la aplicación y eliminar espacios innecesarios
 def adaptar_datos(gtfs):
     # Obtener agency_id de agency.txt en caso de contener una sola agencia y no ser necesario referenciar agency_id en otros archivos
     agency_id_unico = None # Se usará para almacenar el agency_id en caso de que solo haya una agencia en el feed
-    if "agency.txt" in os.listdir(os.path.join(directorio_gtfs, gtfs["id"])):
-        with open(os.path.join(directorio_gtfs, gtfs["id"], "agency.txt"), 'r', encoding="utf-8-sig") as f:
+    if "agency.txt" in os.listdir(os.path.join(directorio_gtfs, gtfs["idFeed"])):
+        with open(os.path.join(directorio_gtfs, gtfs["idFeed"], "agency.txt"), 'r', encoding="utf-8-sig") as f:
             reader = csv.DictReader(f)
             agencias = []
             for fila in reader:
                 agencias.append(fila)
             
             if len(agencias) == 1:
-                agency_id_unico = (gtfs["id"] + '_' + agencias[0]["agency_id"]) if "agency_id" in reader.fieldnames else gtfs["id"]
+                agency_id_unico = (gtfs["idFeed"] + '_' + agencias[0]["agency_id"]) if "agency_id" in reader.fieldnames else gtfs["idFeed"]
 
     # Abrir todos los archivos del directorio y actualizar ids
-    lista_archivos = os.listdir(os.path.join(directorio_gtfs, gtfs["id"]))
+    lista_archivos = os.listdir(os.path.join(directorio_gtfs, gtfs["idFeed"]))
     for file in lista_archivos:
         # Archivos
-        original = os.path.join(directorio_gtfs, gtfs["id"], file)
-        nuevo = os.path.join(directorio_gtfs, gtfs["id"], file + 'tmp')
+        original = os.path.join(directorio_gtfs, gtfs["idFeed"], file)
+        nuevo = os.path.join(directorio_gtfs, gtfs["idFeed"], file + 'tmp')
 
         # Leer el archivo
         with open(original, 'r', encoding="utf-8-sig") as f_in, open(nuevo, 'w', newline='', encoding="UTF-8") as f_out:
@@ -174,13 +174,13 @@ def adaptar_datos(gtfs):
             for fila in reader: # Recorrer cada fila
                 for col in reader.fieldnames:
                     fila[col] = fila[col].strip() if fila[col] != None else fila[col] # Limpiar columna de espacio innecesarios
-                    if col in columnas_id and (col != "parent_station" or fila[col] != ''): # Actualizar ids con el prefijo del gtfs
-                        fila[col] = gtfs["id"] + "_" + fila[col]
+                    if col in columnas_id and (col != "parent_station" or fila[col] != ''): # La columna es un id y si es parent_station no está vacía
+                        fila[col] = gtfs["idFeed"] + "_" + fila[col] # Actualizar ids con idFeed como prefijo
                     if col == "route_sort_order" and fila[col] == "": # Actualizar route_sort_order en caso de que no tenga valor
                         fila[col] = contador_orden
                         contador_orden += 1
                 if anadir_agency_id:
-                    fila["agency_id"] = agency_id_unico if agency_id_unico != None else gtfs["id"]
+                    fila["agency_id"] = agency_id_unico if agency_id_unico != None else gtfs["idFeed"]
                 writer.writerow(fila)
         
         os.remove(original)
