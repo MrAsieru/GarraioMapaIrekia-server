@@ -4,6 +4,7 @@ import csv
 from pathlib import Path
 from typing import List
 from dotenv import load_dotenv
+from pymongo import UpdateOne
 from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
 from pymongo.database import Database
@@ -28,13 +29,15 @@ def conectar():
     return cliente
 
 def guardar(gtfs, db: Database[_DocumentType]):
-    # Agencia
+    #region Agencia
     lista_agencias = csv_to_dict(os.path.join(directorio_gtfs, gtfs["idFeed"], "agency.txt"), ["agency_id"])
     colleccion_agencias = db["agencias"]
     
+    lista_documentos = []
     for agencia_key in lista_agencias.keys():
         agencia: dict = lista_agencias[agencia_key]
-        doc = {
+        lista_documentos.append({
+            "_id": agencia.get("agency_id"),
             "idAgencia": agencia.get("agency_id"),
             "nombre": agencia.get("agency_name"),
             "url": agencia.get("agency_url"),
@@ -43,17 +46,20 @@ def guardar(gtfs, db: Database[_DocumentType]):
             "telefono": agencia.get("agency_phone"),
             "urlTarifa": agencia.get("agency_fare_url"),
             "email": agencia.get("agency_email")
-        }
-        doc_id = colleccion_agencias.insert_one(doc).inserted_id
-        agencia["mongodb_id"] = doc_id
+        })
+    colleccion_agencias.insert_many(lista_documentos)
+    #endregion
 
-    # Linea
+    #region Linea
     lista_lineas = csv_to_dict(os.path.join(directorio_gtfs, gtfs["idFeed"], "routes.txt"), ["route_id"])
     colleccion_lineas = db["lineas"]
 
+    lista_documentos = []
+    agencia_lineas = {}
     for route_key in lista_lineas.keys():
         linea: dict = lista_lineas[route_key]
-        doc = {
+        lista_documentos.append({
+            "_id": linea.get("route_id"),
             "idLinea": linea.get("route_id"),
             "idAgencia": linea.get("agency_id"),
             "nombreCorto": linea.get("route_short_name"),
@@ -66,28 +72,35 @@ def guardar(gtfs, db: Database[_DocumentType]):
             "orden": linea.get("route_sort_order"),
             "recogidaContinua": linea.get("continuous_pickup"),
             "bajadaContinua": linea.get("continuous_drop_off"),
-            "idRed": linea.get("network_id"),
-            "agencia": lista_agencias[linea["agency_id"]].get("mongodb_id")
-        }
-        doc_id = colleccion_lineas.insert_one(doc).inserted_id
-        linea["mongodb_id"] = doc_id
+            "idRed": linea.get("network_id")
+        })
 
-    ## Agencia.lineas
-    for agencia_key in lista_agencias.keys():
-        agencia: dict = lista_agencias[agencia_key]
-        lineas = []
-        for linea_key in lista_lineas.keys():
-            linea: dict = lista_lineas[linea_key]
-            if linea["agency_id"] == agencia["agency_id"]:
-                lineas.append(linea["mongodb_id"])
-        colleccion_agencias.update_one({"_id": agencia["mongodb_id"]}, {"$set": {"lineas": lineas}})
+        # Agencia.lineas
+        if not linea["agency_id"] in agencia_lineas.keys():
+            agencia_lineas[linea["agency_id"]] = []
+        agencia_lineas[linea["agency_id"]].append(linea["route_id"])
 
-    # Parada
+    colleccion_lineas.insert_many(lista_documentos)
+
+    # Agencia.lineas
+    lista_updates = []
+    for agencia_key in agencia_lineas.keys():
+        lista_updates.append(UpdateOne({"_id": agencia_key}, {"$set": {"lineas": agencia_lineas[agencia_key]}}))
+    colleccion_agencias.bulk_write(lista_updates)
+    #endregion
+
+    #region Parada
     lista_paradas = csv_to_dict(os.path.join(directorio_gtfs, gtfs["idFeed"], "stops.txt"), ["stop_id"])
+    if (os.path.exists(os.path.join(directorio_gtfs, gtfs["idFeed"], "levels.txt"))):
+        lista_niveles = csv_to_dict(os.path.join(directorio_gtfs, gtfs["idFeed"], "levels.txt"), ["level_id"])
     colleccion_paradas = db["paradas"]
+
+    lista_documentos = []
     for parada_key in lista_paradas.keys():
         parada: dict = lista_paradas[parada_key]
+
         doc = {
+            "_id": parada.get("stop_id"),
             "idParada": parada.get("stop_id"),
             "codigo": parada.get("stop_code"),
             "nombre": parada.get("stop_name"),
@@ -97,31 +110,70 @@ def guardar(gtfs, db: Database[_DocumentType]):
             "idZona": parada.get("zone_id"),
             "url": parada.get("stop_url"),
             "tipo": parada.get("location_type") if parada.get("location_type", "") != "" else "0",
-            "idParadaPadre": parada.get("parent_station"),
+            "paradaPadre": parada.get("parent_station"),
             "zonaHoraria": parada.get("stop_timezone"),
             "accesibilidad": parada.get("wheelchair_boarding"),
             "idNivel": parada.get("level_id"),
             "codigoPlataforma": parada.get("platform_code")
         }
-        doc_id = colleccion_paradas.insert_one(doc).inserted_id
-        parada["mongodb_id"] = doc_id
 
-    ## Parada.paradaPadre
-    for parada_key in lista_paradas.keys():
-        parada: dict = lista_paradas[parada_key]
-        
-        if parada.get("parent_station") is not None and parada.get("parent_station") != "":
-            paradaPadre = lista_paradas.get(parada["parent_station"])
-            colleccion_paradas.update_one({"_id": parada["mongodb_id"]}, {"$set": {"paradaPadre": paradaPadre["mongodb_id"]}})
+        # Parada.nivel
+        if (os.path.exists(os.path.join(directorio_gtfs, gtfs["idFeed"], "levels.txt"))) and parada.get("level_id") is not None:
+            nivel: dict = lista_niveles[parada["level_id"]]
+            doc["nivel"] = {
+                "idNivel": nivel.get("level_id"),
+                "indice": nivel.get("level_index"),
+                "nombre": nivel.get("level_name")
+            }
 
-    # Viaje
+        lista_documentos.append(doc)
+
+    colleccion_paradas.insert_many(lista_documentos)
+    #endregion
+
+    #region Viaje
     lista_viajes = csv_to_dict(os.path.join(directorio_gtfs, gtfs["idFeed"], "trips.txt"), ["trip_id"])
+    lista_horarios = csv_to_listdict(os.path.join(directorio_gtfs, gtfs["idFeed"], "stop_times.txt"), ["trip_id"])
+    if (os.path.exists(os.path.join(directorio_gtfs, gtfs["idFeed"], "frequencies.txt"))):
+        lista_frecuencias = csv_to_listdict(os.path.join(directorio_gtfs, gtfs["idFeed"], "frequencies.txt"), ["trip_id"])
     colleccion_viajes = db["viajes"]
 
+    lista_documentos = []
+    linea_viajes = {}
+    linea_paradas = {}
+    parada_lineas = {}
+    parada_viajes = {}
     for viaje_key in lista_viajes.keys():
         viaje: dict = lista_viajes[viaje_key]
-        viaje["linea"] = lista_lineas[viaje["route_id"]].get("mongodb_id")
+
+        horarios = []
+        for item in lista_horarios.get(viaje["trip_id"]):
+            horarios.append({
+                "idParada": item.get("stop_id"),
+                "horaLlegada": item.get("arrival_time"),
+                "horaSalida": item.get("departure_time"),
+                "orden": item.get("stop_sequence"),
+                "letrero": item.get("stop_headsign"),
+                "tipoRecogida": item.get("pickup_type"),
+                "tipoBajada": item.get("drop_off_type"),
+                "recogidaContinua": item.get("continuous_pickup"),
+                "bajadaContinua": item.get("continuous_drop_off"),
+                "distanciaRecorrida": item.get("shape_dist_traveled"),
+                "exacto": item.get("timepoint")
+            })
+
+            # Parada.lineas
+            if not item["stop_id"] in parada_lineas.keys():
+                parada_lineas[item["stop_id"]] = []
+            parada_lineas[item["stop_id"]].append(viaje["route_id"])
+
+            # Parada.viajes
+            if not item["stop_id"] in parada_viajes.keys():
+                parada_viajes[item["stop_id"]] = []
+            parada_viajes[item["stop_id"]].append(viaje["trip_id"])
+
         doc = {
+            "_id": viaje.get("trip_id"),
             "idViaje": viaje.get("trip_id"),
             "idLinea": viaje.get("route_id"),
             "idServicio": viaje.get("service_id"),
@@ -132,128 +184,108 @@ def guardar(gtfs, db: Database[_DocumentType]):
             "idRecorrido": viaje.get("shape_id"),
             "accesibilidad": viaje.get("wheelchair_accessible"),
             "bicicletas": viaje.get("bikes_allowed"),
-            "linea": viaje["linea"]
+            "horarios": horarios,
+            "paradas": [h["idParada"] for h in horarios]
         }
-        doc_id = colleccion_viajes.insert_one(doc).inserted_id
-        viaje["mongodb_id"] = doc_id
 
-    ## Linea.viajes
-    for linea_key in lista_lineas.keys():
-        linea: dict = lista_lineas[linea_key]
-        colleccion_lineas.update_one({"_id": linea.get("mongodb_id")}, {"$set": {"viajes": [lista_viajes[v]["mongodb_id"] for v in lista_viajes.keys() if lista_viajes[v].get("route_id") == linea["route_id"]]}})
+        # Viaje.frecuencias
+        if (os.path.exists(os.path.join(directorio_gtfs, gtfs["idFeed"], "frequencies.txt"))):
+            frecuencias = []
+            for item in lista_frecuencias.get(viaje["trip_id"]) or []:
+                frecuencias.append({
+                    "horaInicio": item.get("start_time"),
+                    "horaFin": item.get("end_time"),
+                    "margen": item.get("headway_secs"),
+                    "exacto": item.get("exact_times") == "1"
+                })
+            doc["frecuencias"] = frecuencias
 
-    ## Viaje.horarios y Viaje.paradas
-    lista_horarios = csv_to_listdict(os.path.join(directorio_gtfs, gtfs["idFeed"], "stop_times.txt"), ["trip_id"])
+        lista_documentos.append(doc)
 
-    for viaje_key in lista_viajes.keys():
-        viaje: dict = lista_viajes[viaje_key]
-        
-        horarios = []
-        for servicio in lista_horarios.get(viaje["trip_id"]):
-            servicio["parada_mongodb_id"] = lista_paradas[servicio["stop_id"]].get("mongodb_id")
-            horarios.append({
-                "parada": servicio["parada_mongodb_id"],
-                "idParada": servicio.get("stop_id"),
-                "horaLlegada": servicio.get("arrival_time"),
-                "horaSalida": servicio.get("departure_time"),
-                "orden": servicio.get("stop_sequence"),
-                "letrero": servicio.get("stop_headsign"),
-                "tipoRecogida": servicio.get("pickup_type"),
-                "tipoBajada": servicio.get("drop_off_type"),
-                "recogidaContinua": servicio.get("continuous_pickup"),
-                "bajadaContinua": servicio.get("continuous_drop_off"),
-                "distanciaRecorrida": servicio.get("shape_dist_traveled"),
-                "exacto": servicio.get("timepoint")
-            })
+        # Linea.viajes
+        if not viaje["route_id"] in linea_viajes.keys():
+            linea_viajes[viaje["route_id"]] = []
+        linea_viajes[viaje["route_id"]].append(viaje["trip_id"])
 
-        viaje["paradas"] = [h["parada"] for h in horarios]
+        # Linea.paradas
+        if not viaje["route_id"] in linea_paradas.keys():
+            linea_paradas[viaje["route_id"]] = []
+        linea_paradas[viaje["route_id"]].extend([h["idParada"] for h in horarios])
 
-        colleccion_viajes.update_one({"_id": viaje.get("mongodb_id")}, {"$set": {"horarios": horarios}})
-        colleccion_viajes.update_one({"_id": viaje.get("mongodb_id")}, {"$set": {"paradas": viaje["paradas"]}})
+    colleccion_viajes.insert_many(lista_documentos)
 
-    ## Linea.paradas
-    for linea_key in lista_lineas.keys():
-        linea: dict = lista_lineas[linea_key]
-        paradas = []
-        for viaje_key in lista_viajes.keys():
-            viaje: dict = lista_viajes[viaje_key]
-            if viaje["route_id"] == linea["route_id"]:
-                paradas.extend(viaje["paradas"])
+    # Linea.viajes
+    lista_updates = []
+    for linea_key in linea_viajes.keys():
+        lista_updates.append(UpdateOne({"_id": linea_key}, {"$set": {"viajes": linea_viajes[linea_key]}}))
+    colleccion_lineas.bulk_write(lista_updates)
 
-        paradas = list(set(paradas))
-        colleccion_lineas.update_one({"_id": linea.get("mongodb_id")}, {"$set": {"paradas": paradas}})
+    # Linea.paradas
+    lista_updates = []
+    for linea_key in linea_paradas.keys():
+        lista_updates.append(UpdateOne({"_id": linea_key}, {"$set": {"paradas": list(set(linea_paradas[linea_key]))}}))
+    colleccion_lineas.bulk_write(lista_updates)
 
-    ## Parada.lineas y Parada.viajes
-    for parada_key in lista_paradas.keys():
-        parada: dict = lista_paradas[parada_key]
-        lineas = []
-        viajes = []
-        for viaje_key in lista_viajes.keys():
-            viaje: dict = lista_viajes[viaje_key]
-            if parada["mongodb_id"] in viaje["paradas"]:
-                lineas.append(viaje["linea"])
-                viajes.append(viaje["mongodb_id"])
+    # Parada.lineas
+    lista_updates = []
+    for parada_key in parada_lineas.keys():
+        lista_updates.append(UpdateOne({"_id": parada_key}, {"$set": {"lineas": parada_lineas[parada_key]}}))
+    colleccion_paradas.bulk_write(lista_updates)
 
-        lineas = list(set(lineas))
+    # Parada.viajes
+    lista_updates = []
+    for parada_key in parada_viajes.keys():
+        lista_updates.append(UpdateOne({"_id": parada_key}, {"$set": {"viajes": parada_viajes[parada_key]}}))
+    colleccion_paradas.bulk_write(lista_updates)
+    #endregion
 
-        colleccion_paradas.update_one({"_id": parada.get("mongodb_id")}, {"$set": {"lineas": lineas}})
-        colleccion_paradas.update_one({"_id": parada.get("mongodb_id")}, {"$set": {"viajes": viajes}})
-
-    ## Area
+    #region Area
     if (os.path.exists(os.path.join(directorio_gtfs, gtfs["idFeed"], "areas.txt")) and os.path.exists(os.path.join(directorio_gtfs, gtfs["idFeed"], "area_stops.txt"))):
         lista_areas = csv_to_list(os.path.join(directorio_gtfs, gtfs["idFeed"], "areas.txt"))
         lista_paradas_area = csv_to_listdict(os.path.join(directorio_gtfs, gtfs["idFeed"], "area_stops.txt"), ["area_id"])
         colleccion_areas = db["areas"]
 
+        lista_documentos = []
+        parada_areas = {}
         for area in lista_areas:
             paradas = []
-            for servicio in lista_paradas_area.get(area["area_id"]):
-                paradas.append(lista_paradas[servicio["stop_id"]].get("mongodb_id"))
+            for item in lista_paradas_area.get(area["area_id"]):
+                paradas.append(item["stop_id"])
 
-            doc = {
+                # Parada.areas
+                if not item["stop_id"] in parada_areas.keys():
+                    parada_areas[item["stop_id"]] = []
+                parada_areas[item["stop_id"]].append(area["area_id"])
+
+            lista_documentos.append({
+                "_id": area.get("area_id"),
                 "idArea": area.get("area_id"),
                 "nombre": area.get("area_name"),
                 "paradas": paradas
-            }
-            doc_id = colleccion_areas.insert_one(doc).inserted_id
-            area["mongodb_id"] = doc_id
+            })
 
-    ## Parada.areas
-    if (os.path.exists(os.path.join(directorio_gtfs, gtfs["idFeed"], "areas.txt")) and os.path.exists(os.path.join(directorio_gtfs, gtfs["idFeed"], "area_stops.txt"))):
-        for parada_key in lista_paradas.keys():
-            parada: dict = lista_paradas[parada_key]
-            areas = []
-            for area in lista_areas:
-                if parada["mongodb_id"] in area["paradas"]:
-                    areas.append(area["mongodb_id"])
+        colleccion_areas.insert_many(lista_documentos)
 
-            colleccion_paradas.update_one({"_id": parada.get("mongodb_id")}, {"$set": {"areas": areas}})
+        # Parada.areas
+        lista_updates = []
+        for parada_key in parada_areas.keys():
+            lista_updates.append(UpdateOne({"_id": parada_key}, {"$set": {"areas": parada_areas[parada_key]}}))
+        colleccion_paradas.bulk_write(lista_updates)
+    #endregion
 
-    ## Parada.nivel
-    if (os.path.exists(os.path.join(directorio_gtfs, gtfs["idFeed"], "levels.txt"))):
-        lista_niveles = csv_to_dict(os.path.join(directorio_gtfs, gtfs["idFeed"], "levels.txt"), ["level_id"])
-        for parada_key in lista_paradas.keys():
-            parada: dict = lista_paradas[parada_key]
-            if parada.get("level_id") is not None:
-                nivel: dict = lista_niveles[parada["level_id"]]
-                doc = {
-                    "idNivel": nivel.get("level_id"),
-                    "indice": nivel.get("level_index"),
-                    "nombre": nivel.get("level_name")
-                }
-                colleccion_paradas.update_one({"_id": parada.get("mongodb_id")}, {"$set": doc})
-
-    ## Itinerario
+    #region Itinerario
     if (os.path.exists(os.path.join(directorio_gtfs, gtfs["idFeed"], "pathways.txt"))):
         lista_itinerarios = csv_to_dict(os.path.join(directorio_gtfs, gtfs["idFeed"], "pathways.txt"), ["shape_id"])
         colleccion_itinerarios = db["itinerarios"]
 
+        lista_documentos = []
         for itinerario_key in lista_itinerarios.keys():
             itinerario: dict = lista_itinerarios[itinerario_key]
-            doc = {
+            lista_documentos.append({
+                "_id": itinerario.get("pathway_id"),
                 "idItinerario": itinerario.get("pathway_id"),
-                "desdeParada": lista_paradas[itinerario["from_stop_id"]].get("mongodb_id"),
-                "hastaParada": lista_paradas[itinerario["to_stop_id"]].get("mongodb_id"),
+                "desdeParada": itinerario["from_stop_id"],
+                "hastaParada": itinerario["to_stop_id"],
                 "modo": itinerario.get("pathway_mode"),
                 "bidireccional": itinerario.get("is_bidirectional"),
                 "distancia": itinerario.get("length"),
@@ -263,36 +295,39 @@ def guardar(gtfs, db: Database[_DocumentType]):
                 "anchuraMin": itinerario.get("min_width"),
                 "letrero": itinerario.get("signposted_as"),
                 "letreroReverso": itinerario.get("reversed_signposted_as")
-            }
+            })
 
-            doc_id = colleccion_itinerarios.insert_one(doc).inserted_id
-            itinerario["mongodb_id"] = doc_id
+        colleccion_itinerarios.insert_many(lista_documentos)
+    #endregion
 
-    # Recorrido
+    #region Recorrido
     if (os.path.exists(os.path.join(directorio_gtfs, gtfs["idFeed"], "shapes.txt"))):
         lista_recorridos = csv_to_listdict(os.path.join(directorio_gtfs, gtfs["idFeed"], "shapes.txt"), ["shape_id"])
         colleccion_recorridos = db["recorridos"]
 
+        lista_documentos = []
         for recorrido_key in lista_recorridos.keys():
             recorrido: dict = lista_recorridos[recorrido_key]
             
             secuencia = []
-            for servicio in recorrido:
+            for item in recorrido:
                 secuencia.append({
-                    "latitud": servicio.get("shape_pt_lat"),
-                    "longitud": servicio.get("shape_pt_lon"),
-                    "orden": servicio.get("shape_pt_sequence"),
-                    "distancia": servicio.get("shape_dist_traveled")
+                    "latitud": item.get("shape_pt_lat"),
+                    "longitud": item.get("shape_pt_lon"),
+                    "orden": item.get("shape_pt_sequence"),
+                    "distancia": item.get("shape_dist_traveled")
                 })
             
-            doc = {
+            lista_documentos.append({
+                "_id": recorrido_key,
                 "idRecorrido": recorrido_key,
                 "secuencia": secuencia
-            }
+            })
 
-            colleccion_recorridos.insert_one(doc).inserted_id
+        colleccion_recorridos.insert_many(lista_documentos)
+    #endregion
 
-    # Calendario
+    #region Calendario
     if (os.path.exists(os.path.join(directorio_gtfs, gtfs["idFeed"], "calendar.txt"))): 
         lista_calendario = csv_to_list(os.path.join(directorio_gtfs, gtfs["idFeed"], "calendar.txt"))
     else:
@@ -305,9 +340,9 @@ def guardar(gtfs, db: Database[_DocumentType]):
 
     lista_servicios = {}
     
-    for servicio in lista_calendario:
-        fecha_inicio = datetime.strptime(servicio["start_date"], "%Y%m%d").date()
-        fecha_fin = datetime.strptime(servicio["end_date"], "%Y%m%d").date()
+    for item in lista_calendario:
+        fecha_inicio = datetime.strptime(item["start_date"], "%Y%m%d").date()
+        fecha_fin = datetime.strptime(item["end_date"], "%Y%m%d").date()
         fecha_actual = datetime.now().date()
 
         # Marcar como fecha inicio el dia actual para evitar generar demasiadas fechas        
@@ -321,7 +356,7 @@ def guardar(gtfs, db: Database[_DocumentType]):
         dias_servicio = []
         dias_semana = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
         for i in range(len(dias_semana)):
-            if servicio[dias_semana[i]] == "1":
+            if item[dias_semana[i]] == "1":
                 dias_servicio.append(i+1)
 
         # Obtener todas las fechas en las que existe el servicio
@@ -332,68 +367,55 @@ def guardar(gtfs, db: Database[_DocumentType]):
                 fechas_servicio.append(datetime.combine(i, time.min))
             i += timedelta(days=1)
         
-        lista_servicios[servicio["service_id"]] = fechas_servicio
+        lista_servicios[item["service_id"]] = fechas_servicio
 
-    for servicio in lista_fechas_calendario:
-        if not servicio["service_id"] in lista_servicios.keys():
-            lista_servicios[servicio["service_id"]] = []
+    for item in lista_fechas_calendario:
+        if not item["service_id"] in lista_servicios.keys():
+            lista_servicios[item["service_id"]] = []
         
-        fecha = datetime.strptime(servicio["date"], "%Y%m%d")
-        if servicio["exception_type"] == "1":
-            lista_servicios[servicio["service_id"]].append(fecha)
-        elif servicio["exception_type"] == "2":
-            lista_servicios[servicio["service_id"]].remove(fecha)
+        fecha = datetime.strptime(item["date"], "%Y%m%d")
+        if item["exception_type"] == "1":
+            lista_servicios[item["service_id"]].append(fecha)
+        elif item["exception_type"] == "2":
+            lista_servicios[item["service_id"]].remove(fecha)
 
     # Eliminar posibles fechas repetidas
-    for servicio in lista_servicios.keys():
-        lista_servicios[servicio] = list(set(lista_servicios[servicio]))
-        lista_servicios[servicio].sort()
+    for item in lista_servicios.keys():
+        lista_servicios[item] = list(set(lista_servicios[item]))
+        lista_servicios[item].sort()
 
     # Obtener todas las fechas
     fechas_servicios = []
-    for servicio in lista_servicios.keys():
-        fechas_servicios.extend(lista_servicios[servicio])
+    for item in lista_servicios.keys():
+        fechas_servicios.extend(lista_servicios[item])
 
     fechas = list(set(fechas_servicios))
 
     # Guardar fechas y sus servicios
+    lista_documentos = []
     for fecha in fechas:
         servicios = []
-        for servicio in lista_servicios.keys():
-            if fecha in lista_servicios[servicio]:
-                servicios.append(servicio)
+        for item in lista_servicios.keys():
+            if fecha in lista_servicios[item]:
+                servicios.append(item)
 
-        doc = {
+        lista_documentos.append({
+            "_id": fecha,
             "fecha": fecha,
             "servicios": servicios
-        }
-        colleccion_calendario.insert_one(doc)
+        })
+    colleccion_calendario.insert_many(lista_documentos)
 
-    ## Viaje.fechas
+    # Viaje.fechas
+    lista_updates = []
     for viaje_key in lista_viajes.keys():
         viaje: dict = lista_viajes[viaje_key]
-
-        colleccion_viajes.update_one({"_id": viaje.get("mongodb_id")}, {"$set": {"fechas": lista_servicios.get(viaje["service_id"])}})
-        
-    ## Viaje.frecuencias
-    if (os.path.exists(os.path.join(directorio_gtfs, gtfs["idFeed"], "frequencies.txt"))):
-        lista_frecuencias = csv_to_listdict(os.path.join(directorio_gtfs, gtfs["idFeed"], "frequencies.txt"), ["trip_id"])
-
-        for viaje_key in lista_viajes.keys():
-            viaje: dict = lista_viajes[viaje_key]
-
-            frecuencias = []
-            for item in lista_frecuencias.get(viaje["trip_id"]) or []:
-                frecuencias.append({
-                    "horaInicio": item.get("start_time"),
-                    "horaFin": item.get("end_time"),
-                    "margen": item.get("headway_secs"),
-                    "exacto": item.get("exact_times") == "1"
-                })
-
-            colleccion_viajes.update_one({"_id": viaje.get("mongodb_id")}, {"$set": {"frecuencias": frecuencias}})
+        lista_updates.append(UpdateOne({"_id": viaje_key}, {"$set": {"fechas": lista_servicios.get(viaje["service_id"])}}))
+    colleccion_viajes.bulk_write(lista_updates)
+    #endregion
 
     ## Feed.info
+    lista_updates = []
     if (os.path.exists(os.path.join(directorio_gtfs, gtfs["idFeed"], "feed_info.txt"))):
         lista_info = csv_to_list(os.path.join(directorio_gtfs, gtfs["idFeed"], "feed_info.txt"))
         colleccion_feed = db["feeds"]
@@ -411,7 +433,7 @@ def guardar(gtfs, db: Database[_DocumentType]):
                 "email": info.get("feed_contact_email"),
                 "urlContacto": info.get("feed_contact_url")
             }
-            colleccion_feed.update_one({"idFeed": gtfs["idFeed"]}, {"$set": {"info": doc}})
+            lista_updates.append(UpdateOne({"idFeed": gtfs["idFeed"]}, {"$set": {"info": doc}}))
 
     ## Feed.atribuciones
     if (os.path.exists(os.path.join(directorio_gtfs, gtfs["idFeed"], "attributions.txt"))):
@@ -433,15 +455,19 @@ def guardar(gtfs, db: Database[_DocumentType]):
                 "telefono": atribucion.get("agency_phone")
             })
 
-        colleccion_feed.update_one({"idFeed": gtfs["idFeed"]}, {"$set": {"atribuciones": doc}})
+        lista_updates.append(UpdateOne({"idFeed": gtfs["idFeed"]}, {"$set": {"atribuciones": doc}}))
+    
+    if len(lista_updates) > 0:
+        colleccion_feed.bulk_write(lista_updates)
 
     ## Traduccion
     if (os.path.exists(os.path.join(directorio_gtfs, gtfs["idFeed"], "translations.txt"))):
         lista_traducciones = csv_to_list(os.path.join(directorio_gtfs, gtfs["idFeed"], "translations.txt"))
         colleccion_traducciones = db["traducciones"]
 
+        lista_documentos = []
         for traduccion in lista_traducciones:
-            doc = {
+            lista_documentos.append({
                 "nombreTabla": traduccion.get("table_name"),
                 "nombreCampo": traduccion.get("field_name"),
                 "idioma": traduccion.get("language"),
@@ -449,10 +475,10 @@ def guardar(gtfs, db: Database[_DocumentType]):
                 "idElemento": traduccion.get("record_id"),
                 "idElemento2": traduccion.get("record_sub_id"),
                 "valorOriginal": traduccion.get("field_value")
-            }
-            colleccion_traducciones.insert_one(doc)
+            })
+        colleccion_traducciones.insert_many(lista_documentos)
 
-        db["feeds"].update_one({"id": gtfs["idFeed"]}, {"$set": {"actualizar": False}})
+    db["feeds"].update_one({"id": gtfs["idFeed"]}, {"$set": {"actualizar": False}})
 
 
 def csv_to_dict(archivo, primary_key: list) -> dict:
@@ -487,7 +513,7 @@ def csv_to_list(archivo) -> list:
 def main():
     global config, directorio_gtfs, directorio_geojson
     start = datetime.now()
-    load_dotenv(dotenv_path=Path('./mongodb/mongodb.env'))
+    #load_dotenv(dotenv_path=Path('./mongodb/mongodb.env'))
     with open('config.json') as f:
         config = json.load(f)
 

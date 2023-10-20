@@ -34,19 +34,20 @@ def conectar() -> MongoClient:
     return cliente
 
 
-def sincronizar_feeds(db_feeds: Collection[_DocumentType], file_feeds: List[dict]):
+def sincronizar_feeds(colleccion_feeds: Collection[_DocumentType], file_feeds: List[dict]):
     # Obtener idFeeds de feeds en la base de datos y en el fichero
-    db_feeds_idFeeds = db_feeds.distinct("idFeed")
+    db_feeds_idFeeds = colleccion_feeds.distinct("_id")
     file_feeds_idFeeds = [feed["idFeed"] for feed in file_feeds]
     feeds_nuevos = [feed for feed in file_feeds if feed["idFeed"] not in db_feeds_idFeeds]
 
     # Eliminar feeds que no existen en el fichero
     if len(db_feeds_idFeeds) > 0:
-        db_feeds.delete_many({"idFeed": {"$nin": file_feeds_idFeeds}})
+        colleccion_feeds.delete_many({"_id": {"$nin": file_feeds_idFeeds}})
 
     # Añadir feeds que no existen en la base de datos
     if len(feeds_nuevos) > 0:
-        db_feeds.insert_many(feeds_nuevos)
+        feeds_nuevos["_id"] = feeds_nuevos["idFeed"]
+        colleccion_feeds.insert_many(feeds_nuevos)
 
 
 def descargar(gtfs: dict, config: dict, db_feeds: Collection[_DocumentType]) -> bool:
@@ -66,7 +67,7 @@ def descargar(gtfs: dict, config: dict, db_feeds: Collection[_DocumentType]) -> 
                     with open(archivo_zip, 'wb') as f:
                         f.write(respuesta.content)
                     # Actualizar MD5
-                    db_feeds.update_one({"idFeed": gtfs["idFeed"]}, {"$set": {"MD5": md5, "actualizar": True}})
+                    db_feeds.update_one({"_id": gtfs["idFeed"]}, {"$set": {"MD5": md5, "actualizar": True}})
                     actualizar = True
             else:
                 error = True
@@ -86,7 +87,7 @@ def descargar(gtfs: dict, config: dict, db_feeds: Collection[_DocumentType]) -> 
                             f.write(respuesta.content)
 
                         # Actualizar etag
-                        db_feeds.update_one({"idFeed": gtfs["idFeed"]}, {"$set": {"etag": respuesta.headers.get("etag"), "actualizar": True}})
+                        db_feeds.update_one({"_id": gtfs["idFeed"]}, {"$set": {"etag": respuesta.headers.get("etag"), "actualizar": True}})
                         actualizar = True  
                     else:
                         error = True
@@ -113,7 +114,7 @@ def descargar(gtfs: dict, config: dict, db_feeds: Collection[_DocumentType]) -> 
                             f.write(fichero.content)
 
                         # Actualizar fecha de actualización
-                        db_feeds.update_one({"idFeed": gtfs["idFeed"]}, {"$set": {"fechaActualizacion": info_conjunto.get('ficherosDto', [{}])[0].get('fechaActualizacion'), "actualizar": True}})
+                        db_feeds.update_one({"_id": gtfs["idFeed"]}, {"$set": {"fechaActualizacion": info_conjunto.get('ficherosDto', [{}])[0].get('fechaActualizacion'), "actualizar": True}})
                         actualizar = True
                     else:
                         error = True
