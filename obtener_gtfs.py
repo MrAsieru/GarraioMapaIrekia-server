@@ -46,7 +46,8 @@ def sincronizar_feeds(colleccion_feeds: Collection[_DocumentType], file_feeds: L
 
     # Añadir feeds que no existen en la base de datos
     if len(feeds_nuevos) > 0:
-        feeds_nuevos["_id"] = feeds_nuevos["idFeed"]
+        for feed in feeds_nuevos:
+            feed["_id"] = feed["idFeed"]
         colleccion_feeds.insert_many(feeds_nuevos)
 
 
@@ -99,16 +100,13 @@ def descargar(gtfs: dict, config: dict, db_feeds: Collection[_DocumentType]) -> 
             url_info = f"https://nap.mitma.es/api/Fichero/{descarga['conjuntoDatoId']}"
             headers = {"ApiKey": config.get("nap_mitma_api_key"), "Accept": "application/json"}
             info_conjunto = requests.request("GET", url_info, headers=headers)
-            print(info_conjunto)
             if (info_conjunto.status_code == 200):
                 info_conjunto = info_conjunto.json()
-                print(info_conjunto.get('ficherosDto', [{}])[0].get('fechaActualizacion'))
                 #TODO: Comprobar si el conjunto de datos es correcto
                 if (info_conjunto.get('ficherosDto', [{}])[0].get('fechaActualizacion', "") != gtfs.get("fechaActualizacion", "")):
                     # Descargar fichero
                     url_descarga = f"https://nap.mitma.es/api/Fichero/download/{info_conjunto.get('ficherosDto', [{}])[0].get('ficheroId')}"
                     fichero = requests.request("GET", url_descarga, headers=headers)
-                    print(fichero.headers)
                     if (fichero.status_code == 200):
                         with open(archivo_zip, 'wb') as f:
                             f.write(fichero.content)
@@ -170,7 +168,7 @@ def adaptar_datos(gtfs):
             writer = csv.DictWriter(f_out, fieldnames=headers)
             writer.writeheader()
             
-            columnas_id = [col for col in reader.fieldnames if col[-3:] == "_id" or col == "parent_station"]
+            columnas_id = [col for col in reader.fieldnames if (col[-3:] == "_id" and col != "direction_id") or col == "parent_station"]
             contador_orden = 0
             for fila in reader: # Recorrer cada fila
                 for col in reader.fieldnames:
