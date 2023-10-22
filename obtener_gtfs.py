@@ -42,7 +42,7 @@ def sincronizar_feeds(colleccion_feeds: Collection[_DocumentType], file_feeds: L
 
     # Eliminar feeds que no existen en el fichero
     if len(db_feeds_idFeeds) > 0:
-        colleccion_feeds.delete_many({"_id": {"$nin": file_feeds_idFeeds}})
+        colleccion_feeds.update_many({"_id": {"$nin": file_feeds_idFeeds}}, {"$set": {"eliminar": True}})
 
     # Añadir feeds que no existen en la base de datos
     if len(feeds_nuevos) > 0:
@@ -84,12 +84,16 @@ def descargar(gtfs: dict, config: dict, db_feeds: Collection[_DocumentType]) -> 
                     respuesta = requests.request("GET", descarga["url"])
 
                     if (respuesta.status_code == 200):
-                        with open(archivo_zip, 'wb') as f:
-                            f.write(respuesta.content)
+                        # Comprobar MD5
+                        md5 = hashlib.md5(respuesta.content).hexdigest()
+                        if (md5 != gtfs.get("MD5", "")):
 
-                        # Actualizar etag
-                        db_feeds.update_one({"_id": gtfs["idFeed"]}, {"$set": {"etag": respuesta.headers.get("etag"), "actualizar": True}})
-                        actualizar = True  
+                            with open(archivo_zip, 'wb') as f:
+                                f.write(respuesta.content)
+
+                            # Actualizar etag y MD5
+                            db_feeds.update_one({"_id": gtfs["idFeed"]}, {"$set": {"etag": respuesta.headers.get("etag"), "MD5": md5,"actualizar": True}})
+                            actualizar = True  
                     else:
                         error = True
             else:
@@ -108,12 +112,15 @@ def descargar(gtfs: dict, config: dict, db_feeds: Collection[_DocumentType]) -> 
                     url_descarga = f"https://nap.mitma.es/api/Fichero/download/{info_conjunto.get('ficherosDto', [{}])[0].get('ficheroId')}"
                     fichero = requests.request("GET", url_descarga, headers=headers)
                     if (fichero.status_code == 200):
-                        with open(archivo_zip, 'wb') as f:
-                            f.write(fichero.content)
+                        # Comprobar MD5
+                        md5 = hashlib.md5(fichero.content).hexdigest()
+                        if (md5 != gtfs.get("MD5", "")):
+                            with open(archivo_zip, 'wb') as f:
+                                f.write(fichero.content)
 
-                        # Actualizar fecha de actualización
-                        db_feeds.update_one({"_id": gtfs["idFeed"]}, {"$set": {"fechaActualizacion": info_conjunto.get('ficherosDto', [{}])[0].get('fechaActualizacion'), "actualizar": True}})
-                        actualizar = True
+                            # Actualizar fecha de actualización y MD5
+                            db_feeds.update_one({"_id": gtfs["idFeed"]}, {"$set": {"fechaActualizacion": info_conjunto.get('ficherosDto', [{}])[0].get('fechaActualizacion'), "MD5": md5,"actualizar": True}})
+                            actualizar = True
                     else:
                         error = True
             else:
@@ -218,7 +225,7 @@ def main():
 
     sincronizar_feeds(db["feeds"], feeds)
 
-    for feed in db["feeds"].find():
+    for feed in db["feeds"].find({"eliminar": {"$ne": True}}):
         actualizar = descargar(feed, config, db["feeds"])
         if actualizar:
             descomprimir(feed)

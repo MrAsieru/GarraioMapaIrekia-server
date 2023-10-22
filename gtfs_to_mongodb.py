@@ -374,10 +374,11 @@ def guardar(gtfs, db: Database[_DocumentType]):
             lista_servicios[item["service_id"]] = []
         
         fecha = datetime.strptime(item["date"], "%Y%m%d")
-        if item["exception_type"] == "1":
-            lista_servicios[item["service_id"]].append(fecha)
-        elif item["exception_type"] == "2":
-            lista_servicios[item["service_id"]].remove(fecha)
+        if fecha_actual <= fecha:
+            if item["exception_type"] == "1":
+                lista_servicios[item["service_id"]].append(fecha)
+            elif item["exception_type"] == "2":
+                lista_servicios[item["service_id"]].remove(fecha)
 
     # Eliminar posibles fechas repetidas
     for item in lista_servicios.keys():
@@ -392,19 +393,29 @@ def guardar(gtfs, db: Database[_DocumentType]):
     fechas = list(set(fechas_servicios))
 
     # Guardar fechas y sus servicios
-    lista_documentos = []
+    lista_insert = []
+    lista_update = []
+    fechas_db = colleccion_calendario.distinct("_id", {"_id": {"$in": fechas}})
+
     for fecha in fechas:
         servicios = []
         for item in lista_servicios.keys():
             if fecha in lista_servicios[item]:
                 servicios.append(item)
 
-        lista_documentos.append({
-            "_id": fecha,
-            "fecha": fecha,
-            "servicios": servicios
-        })
-    colleccion_calendario.insert_many(lista_documentos)
+        if not fecha in fechas_db:
+            lista_insert.append({
+                "_id": fecha,
+                "fecha": fecha,
+                "servicios": servicios
+            })
+        else:
+            lista_update.append(UpdateOne({"_id": fecha}, {"$push": {"servicios": {"$each": servicios}}}))
+    
+    if len(lista_insert) > 0:
+        colleccion_calendario.insert_many(lista_insert)
+    if len(lista_update) > 0:
+        colleccion_calendario.bulk_write(lista_update)
 
     # Viaje.fechas
     lista_updates = []
@@ -528,13 +539,14 @@ def main():
         db = cliente["gtfs"]
 
     #TODO: Eliminar documentos que contengan id con el prefijo de los feeds que se deben actualizar
-    feeds_actualizar_ids = db["feeds"].distinct("idFeed", {"actualizar": True})
+    feeds_eliminar_ids = db["feeds"].distinct("idFeed", {"$or": [{"actualizar": True}, {"eliminar": True}]})
+    db["feeds"].delete_many({"eliminar": True})
     for colleccion in ["agencias", "lineas", "paradas", "recorridos", "viajes", "traducciones", "itinerarios", "areas"]:
-        db[colleccion].delete_many({"_id": {"$regex": f"^{('|'.join(feeds_actualizar_ids))}_"}})
+        db[colleccion].delete_many({"_id": {"$regex": f"^{('|'.join(feeds_eliminar_ids))}_"}})
     db["calendario"].update_many({}, {
         "$pull": {
             "servicios": {
-                "$regex": f"^{('|'.join(feeds_actualizar_ids))}_"
+                "$regex": f"^{('|'.join(feeds_eliminar_ids))}_"
             }
         }
     })
