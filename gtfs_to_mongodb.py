@@ -42,10 +42,10 @@ def guardar(gtfs, db: Database[_DocumentType]):
             "nombre": agencia.get("agency_name"),
             "url": agencia.get("agency_url"),
             "zonaHoraria": agencia.get("agency_timezone"),
-            "idioma": agencia.get("agency_lang"),
-            "telefono": agencia.get("agency_phone"),
-            "urlTarifa": agencia.get("agency_fare_url"),
-            "email": agencia.get("agency_email")
+            "idioma": agencia.get("agency_lang", None),
+            "telefono": agencia.get("agency_phone", None),
+            "urlTarifa": agencia.get("agency_fare_url", None),
+            "email": agencia.get("agency_email", None)
         })
     colleccion_agencias.insert_many(lista_documentos)
     #endregion
@@ -58,21 +58,27 @@ def guardar(gtfs, db: Database[_DocumentType]):
     agencia_lineas = {}
     for route_key in lista_lineas.keys():
         linea: dict = lista_lineas[route_key]
+        color = linea.get("route_color", None)
+        if color is not None and not color.startswith('#'):
+            color = "#"+color
+        colorTexto = linea.get("route_color", None)
+        if colorTexto is not None and not colorTexto.startswith('#'):
+            colorTexto = "#"+colorTexto
         lista_documentos.append({
             "_id": linea.get("route_id"),
             "idLinea": linea.get("route_id"),
             "idAgencia": linea.get("agency_id"),
-            "nombreCorto": linea.get("route_short_name"),
-            "nombreLargo": linea.get("route_long_name"),
-            "descripcion": linea.get("route_desc"),
+            "nombreCorto": linea.get("route_short_name", None),
+            "nombreLargo": linea.get("route_long_name", None),
+            "descripcion": linea.get("route_desc", None),
             "tipo": int(linea.get("route_type")),
-            "url": linea.get("route_url"),
-            "color": linea.get("route_color") if linea.get("route_color", "").startswith('#') else "#"+linea.get("route_color", ""),
-            "colorTexto": linea.get("route_text_color") if linea.get("route_text_color", "").startswith('#') else "#"+linea.get("route_text_color", ""),
-            "orden": int(linea.get("route_sort_order")),
-            "recogidaContinua": int(linea.get("continuous_pickup")),
-            "bajadaContinua": int(linea.get("continuous_drop_off")),
-            "idRed": linea.get("network_id")
+            "url": linea.get("route_url", None),
+            "color": color,
+            "colorTexto": colorTexto,
+            "orden": int(linea.get("route_sort_order")) if linea.get("route_sort_order", "") != "" else None,
+            "recogidaContinua": int(linea.get("continuous_pickup") if linea.get("continuous_pickup", "") != "" else "1"),
+            "bajadaContinua": int(linea.get("continuous_drop_off") if linea.get("continuous_drop_off", "") != "" else "1"),
+            "idRed": linea.get("network_id", None)
         })
 
         # Agencia.lineas
@@ -102,19 +108,19 @@ def guardar(gtfs, db: Database[_DocumentType]):
         doc = {
             "_id": parada.get("stop_id"),
             "idParada": parada.get("stop_id"),
-            "codigo": parada.get("stop_code"),
-            "nombre": parada.get("stop_name"),
-            "descripcion": parada.get("stop_desc"),
-            "posicionLatitud": float(parada.get("stop_lat")),
-            "posicionLongitud": float(parada.get("stop_lon")),
-            "idZona": parada.get("zone_id"),
-            "url": parada.get("stop_url"),
+            "codigo": parada.get("stop_code", None),
+            "nombre": parada.get("stop_name", None),
+            "descripcion": parada.get("stop_desc", None),
+            "posicionLatitud": float(parada.get("stop_lat")) if parada.get("stop_lat", "") != "" else None,
+            "posicionLongitud": float(parada.get("stop_lon")) if parada.get("stop_lon", "") != "" else None,
+            "idZona": parada.get("zone_id", None),
+            "url": parada.get("stop_url", None),
             "tipo": int(parada.get("location_type") if parada.get("location_type", "") != "" else "0"),
-            "paradaPadre": parada.get("parent_station"),
-            "zonaHoraria": parada.get("stop_timezone"),
-            "accesibilidad": int(parada.get("wheelchair_boarding")),
-            "idNivel": parada.get("level_id"),
-            "codigoPlataforma": parada.get("platform_code")
+            "paradaPadre": parada.get("parent_station", None),
+            "zonaHoraria": parada.get("stop_timezone", None),
+            "accesibilidad": int(parada.get("wheelchair_boarding") if parada.get("wheelchair_boarding", "") != "" else "0"),
+            "idNivel": parada.get("level_id", None),
+            "codigoPlataforma": parada.get("platform_code", None)
         }
 
         # Parada.nivel
@@ -123,7 +129,7 @@ def guardar(gtfs, db: Database[_DocumentType]):
             doc["nivel"] = {
                 "idNivel": nivel.get("level_id"),
                 "indice": int(nivel.get("level_index")),
-                "nombre": nivel.get("level_name")
+                "nombre": nivel.get("level_name", None)
             }
 
         lista_documentos.append(doc)
@@ -150,16 +156,16 @@ def guardar(gtfs, db: Database[_DocumentType]):
         for item in lista_horarios.get(viaje["trip_id"]) or []:
             horarios.append({
                 "idParada": item.get("stop_id"),
-                "horaLlegada": item.get("arrival_time"),
-                "horaSalida": item.get("departure_time"),
+                "horaLlegada": item.get("arrival_time", None),
+                "horaSalida": item.get("departure_time", None),
                 "orden": int(item.get("stop_sequence")),
-                "letrero": item.get("stop_headsign"),
-                "tipoRecogida": int(item.get("pickup_type")),
-                "tipoBajada": int(item.get("drop_off_type")),
-                "recogidaContinua": int(item.get("continuous_pickup")),
-                "bajadaContinua": int(item.get("continuous_drop_off")),
-                "distanciaRecorrida": float(item.get("shape_dist_traveled")),
-                "exacto": item.get("timepoint") == "1"
+                "letrero": item.get("stop_headsign", None),
+                "tipoRecogida": int(item.get("pickup_type") if item.get("pickup_type", "") != "" else "0"),
+                "tipoBajada": int(item.get("drop_off_type") if item.get("drop_off_type", "") != "" else "0"),
+                "recogidaContinua": int(item.get("continuous_pickup") if item.get("continuous_pickup", "") != "" else "1"),
+                "bajadaContinua": int(item.get("continuous_drop_off") if item.get("continuous_drop_off", "") != "" else "1"),
+                "distanciaRecorrida": float(item.get("shape_dist_traveled")) if item.get("shape_dist_traveled", "") != "" else None,
+                "exacto": item.get("timepoint", "1") == "1" or item.get("timepoint") == ""
             })
 
             # Parada.lineas
@@ -177,13 +183,13 @@ def guardar(gtfs, db: Database[_DocumentType]):
             "idViaje": viaje.get("trip_id"),
             "idLinea": viaje.get("route_id"),
             "idServicio": viaje.get("service_id"),
-            "letrero": viaje.get("trip_headsign"),
-            "nombre": viaje.get("trip_short_name"),
-            "idDireccion": int(viaje.get("direction_id")),
-            "idBloque": viaje.get("block_id"),
-            "idRecorrido": viaje.get("shape_id"),
-            "accesibilidad": int(viaje.get("wheelchair_accessible")),
-            "bicicletas": int(viaje.get("bikes_allowed")),
+            "letrero": viaje.get("trip_headsign", None),
+            "nombre": viaje.get("trip_short_name", None),
+            "direccion": int(viaje.get("direction_id")) if viaje.get("direction_id", "") != "" else None,
+            "idBloque": viaje.get("block_id", None),
+            "idRecorrido": viaje.get("shape_id", None),
+            "accesibilidad": int(viaje.get("wheelchair_accessible") if viaje.get("wheelchair_accessible", "") != "" else "0"),
+            "bicicletas": int(viaje.get("bikes_allowed") if viaje.get("bikes_allowed", "") != "" else "0"),
             "horarios": horarios,
             "paradas": [h["idParada"] for h in horarios]
         }
@@ -196,7 +202,7 @@ def guardar(gtfs, db: Database[_DocumentType]):
                     "horaInicio": item.get("start_time"),
                     "horaFin": item.get("end_time"),
                     "margen": int(item.get("headway_secs")),
-                    "exacto": item.get("exact_times") == "1"
+                    "exacto": item.get("exact_times", "0") == "1" or item.get("exact_times") != ""
                 })
             doc["frecuencias"] = frecuencias
 
@@ -260,7 +266,7 @@ def guardar(gtfs, db: Database[_DocumentType]):
             lista_documentos.append({
                 "_id": area.get("area_id"),
                 "idArea": area.get("area_id"),
-                "nombre": area.get("area_name"),
+                "nombre": area.get("area_name", None),
                 "paradas": paradas
             })
 
@@ -288,13 +294,13 @@ def guardar(gtfs, db: Database[_DocumentType]):
                 "hastaParada": itinerario["to_stop_id"],
                 "modo": int(itinerario.get("pathway_mode")),
                 "bidireccional": itinerario.get("is_bidirectional") == "1",
-                "distancia": float(itinerario.get("length")),
-                "duracion": int(itinerario.get("traversal_time")),
-                "escalones": int(itinerario.get("stair_count")),
-                "pendienteMax": float(itinerario.get("max_slope")),
-                "anchuraMin": float(itinerario.get("min_width")),
-                "letrero": itinerario.get("signposted_as"),
-                "letreroReverso": itinerario.get("reversed_signposted_as")
+                "distancia": float(itinerario.get("length")) if itinerario.get("length", "") != "" else None,
+                "duracion": int(itinerario.get("traversal_time")) if itinerario.get("traversal_time", "") != "" else None,
+                "escalones": int(itinerario.get("stair_count")) if itinerario.get("stair_count", "") != "" else None,
+                "pendienteMax": float(itinerario.get("max_slope") if itinerario.get("max_slope", "") != "" else "0"),
+                "anchuraMin": float(itinerario.get("min_width")) if itinerario.get("min_width", "") != "" else None,
+                "letrero": itinerario.get("signposted_as", None),
+                "letreroReverso": itinerario.get("reversed_signposted_as", None)
             })
 
         colleccion_itinerarios.insert_many(lista_documentos)
@@ -315,7 +321,7 @@ def guardar(gtfs, db: Database[_DocumentType]):
                     "latitud": float(item.get("shape_pt_lat")),
                     "longitud": float(item.get("shape_pt_lon")),
                     "orden": int(item.get("shape_pt_sequence")),
-                    "distancia": item.get("shape_dist_traveled")
+                    "distancia": float(item.get("shape_dist_traveled")) if item.get("shape_dist_traveled", "") != "" else None
                 })
             
             lista_documentos.append({
@@ -341,9 +347,9 @@ def guardar(gtfs, db: Database[_DocumentType]):
     lista_servicios = {}
     
     for item in lista_calendario:
-        fecha_inicio = datetime.strptime(item["start_date"], "%Y%m%d").date()
-        fecha_fin = datetime.strptime(item["end_date"], "%Y%m%d").date()
-        fecha_actual = datetime.now().date()
+        fecha_inicio = datetime.strptime(item["start_date"], "%Y%m%d")
+        fecha_fin = datetime.strptime(item["end_date"], "%Y%m%d")
+        fecha_actual = datetime.combine(datetime.now().date(), time.min)
 
         # Marcar como fecha inicio el dia actual para evitar generar demasiadas fechas        
         if fecha_inicio < fecha_actual:
@@ -364,7 +370,7 @@ def guardar(gtfs, db: Database[_DocumentType]):
         i = fecha_inicio
         while i <= fecha_fin:
             if i.isoweekday() in dias_servicio:
-                fechas_servicio.append(datetime.combine(i, time.min))
+                fechas_servicio.append(i)
             i += timedelta(days=1)
         
         lista_servicios[item["service_id"]] = fechas_servicio
@@ -378,7 +384,10 @@ def guardar(gtfs, db: Database[_DocumentType]):
             if item["exception_type"] == "1":
                 lista_servicios[item["service_id"]].append(fecha)
             elif item["exception_type"] == "2":
-                lista_servicios[item["service_id"]].remove(fecha)
+                try:
+                    lista_servicios[item["service_id"]].remove(fecha)
+                except ValueError:
+                    pass
 
     # Eliminar posibles fechas repetidas
     for item in lista_servicios.keys():
@@ -423,6 +432,10 @@ def guardar(gtfs, db: Database[_DocumentType]):
         viaje: dict = lista_viajes[viaje_key]
         lista_updates.append(UpdateOne({"_id": viaje_key}, {"$set": {"fechas": lista_servicios.get(viaje["service_id"])}}))
     colleccion_viajes.bulk_write(lista_updates)
+
+    # Eliminar viajes que no contengan fecha (realizados en el pasado)
+    colleccion_viajes.delete_many({"fechas": {"$type": "null"}})
+    colleccion_viajes.delete_many({"fechas": {"$size": 0}})
     #endregion
 
     ## Feed.info
@@ -437,12 +450,12 @@ def guardar(gtfs, db: Database[_DocumentType]):
                 "nombreEditor": info.get("feed_publisher_name"),
                 "urlEditor": info.get("feed_publisher_url"),
                 "idioma": info.get("feed_lang"),
-                "idiomaPredeterminado": info.get("default_lang"),
-                "fechaInicio": datetime.strptime(info.get("feed_start_date"), "%Y%m%d"),
-                "fechaFin": datetime.strptime(info.get("feed_end_date"), "%Y%m%d"),
-                "version": info.get("feed_version"),
-                "email": info.get("feed_contact_email"),
-                "urlContacto": info.get("feed_contact_url")
+                "idiomaPredeterminado": info.get("default_lang", None),
+                "fechaInicio": datetime.strptime(info.get("feed_start_date"), "%Y%m%d") if info.get("feed_start_date", None) is not None else None,
+                "fechaFin": datetime.strptime(info.get("feed_end_date"), "%Y%m%d") if info.get("feed_end_date", None) is not None else None,
+                "version": info.get("feed_version", None),
+                "email": info.get("feed_contact_email", None),
+                "urlContacto": info.get("feed_contact_url", None)
             }
             lista_updates.append(UpdateOne({"idFeed": gtfs["idFeed"]}, {"$set": {"info": doc}}))
 
@@ -453,17 +466,17 @@ def guardar(gtfs, db: Database[_DocumentType]):
         atribuciones = []
         for atribucion in lista_atribuciones:
             atribuciones.append({
-                "idAtribucion": atribucion.get("attribution_id"),
-                "idAgencia": atribucion.get("agency_id"),
-                "idLinea": atribucion.get("route_id"),
-                "idViaje": atribucion.get("trip_id"),
-                "nombreOrganizacion": atribucion.get("agency_name"),
-                "esProductor": atribucion.get("is_producer") == "1",
-                "esOperador": atribucion.get("is_operator") == "1",
-                "esAutoridad": atribucion.get("is_authority") == "1",
-                "url": atribucion.get("agency_url"),
-                "email": atribucion.get("agency_email"),
-                "telefono": atribucion.get("agency_phone")
+                "idAtribucion": atribucion.get("attribution_id", None),
+                "idAgencia": atribucion.get("agency_id", None),
+                "idLinea": atribucion.get("route_id", None),
+                "idViaje": atribucion.get("trip_id", None),
+                "nombreOrganizacion": atribucion.get("agency_name", None),
+                "esProductor": atribucion.get("is_producer", "0") == "1" or atribucion.get("is_producer", "") != "",
+                "esOperador": atribucion.get("is_operator", "0") == "1" or atribucion.get("is_operator", "") != "",
+                "esAutoridad": atribucion.get("is_authority", "0") == "1" or atribucion.get("is_authority", "") != "",
+                "url": atribucion.get("agency_url", None),
+                "email": atribucion.get("agency_email", None),
+                "telefono": atribucion.get("agency_phone", None)
             })
 
         lista_updates.append(UpdateOne({"idFeed": gtfs["idFeed"]}, {"$set": {"atribuciones": doc}}))

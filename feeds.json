@@ -1,10 +1,217 @@
 [
     {
+        "idFeed": "Alavabus",
+        "sources": [
+            {
+                "type": "NAP_MITMA",
+                "conjuntoDatoId": 1161
+            }
+        ]
+    },
+    {
+        "idFeed": "Bilbobus",
+        "sources": [
+            {
+                "type": "NAP_MITMA",
+                "conjuntoDatoId": 1259
+            }
+        ]
+    },
+    {
         "idFeed": "Bizkaibus",
         "sources": [
             {
                 "type": "NAP_MITMA",
                 "conjuntoDatoId": 1061
+            }
+        ]
+    },
+    {
+        "idFeed": "Donostiabus (Dbus)",
+        "sources": [
+            {
+                "type": "NAP_MITMA",
+                "conjuntoDatoId": 995
+            }
+        ]
+    },
+    {
+        "idFeed": "Euskotren",
+        "sources": [
+            {
+                "type": "NAP_MITMA",
+                "conjuntoDatoId": 1062
+            }
+        ]
+    },
+    {
+        "idFeed": "Funicular de Artxanda",
+        "sources": [
+            {
+                "type": "NAP_MITMA",
+                "conjuntoDatoId": 1063
+            }
+        ]
+    },
+    {
+        "idFeed": "Lurraldebus Arrasate",
+        "sources": [
+            {
+                "type": "NAP_MITMA",
+                "conjuntoDatoId": 997
+            }
+        ]
+    },
+    {
+        "idFeed": "Lurraldebus auif",
+        "sources": [
+            {
+                "type": "NAP_MITMA",
+                "conjuntoDatoId": 998
+            }
+        ]
+    },
+    {
+        "idFeed": "Lurraldebus Eibar",
+        "sources": [
+            {
+                "type": "NAP_MITMA",
+                "conjuntoDatoId": 999
+            }
+        ]
+    },
+    {
+        "idFeed": "Lurraldebus Ekialdebus",
+        "sources": [
+            {
+                "type": "NAP_MITMA",
+                "conjuntoDatoId": 1000
+            }
+        ]
+    },
+    {
+        "idFeed": "Lurraldebus Euskotren bus",
+        "sources": [
+            {
+                "type": "NAP_MITMA",
+                "conjuntoDatoId": 1001
+            }
+        ]
+    },
+    {
+        "idFeed": "Lurraldebus Goierrialdea",
+        "sources": [
+            {
+                "type": "NAP_MITMA",
+                "conjuntoDatoId": 1028
+            }
+        ]
+    },
+    {
+        "idFeed": "Lurraldebus Guipuzcoana",
+        "sources": [
+            {
+                "type": "NAP_MITMA",
+                "conjuntoDatoId": 1003
+            }
+        ]
+    },
+    {
+        "idFeed": "Lurraldebus Hernani",
+        "sources": [
+            {
+                "type": "NAP_MITMA",
+                "conjuntoDatoId": 1029
+            }
+        ]
+    },
+    {
+        "idFeed": "Lurraldebus Lasarte",
+        "sources": [
+            {
+                "type": "NAP_MITMA",
+                "conjuntoDatoId": 1030
+            }
+        ]
+    },
+    {
+        "idFeed": "Lurraldebus Oiartzun",
+        "sources": [
+            {
+                "type": "NAP_MITMA",
+                "conjuntoDatoId": 1031
+            }
+        ]
+    },
+    {
+        "idFeed": "Lurraldebus Pesa",
+        "sources": [
+            {
+                "type": "NAP_MITMA",
+                "conjuntoDatoId": 1032
+            }
+        ]
+    },
+    {
+        "idFeed": "Lurraldebus Renter\u00eda",
+        "sources": [
+            {
+                "type": "NAP_MITMA",
+                "conjuntoDatoId": 1033
+            }
+        ]
+    },
+    {
+        "idFeed": "Lurraldebus TBH (Interurbano Tolosa Buruntzaldea)",
+        "sources": [
+            {
+                "type": "NAP_MITMA",
+                "conjuntoDatoId": 1393
+            }
+        ]
+    },
+    {
+        "idFeed": "Lurraldebus Tolosaldea",
+        "sources": [
+            {
+                "type": "NAP_MITMA",
+                "conjuntoDatoId": 1034
+            }
+        ]
+    },
+    {
+        "idFeed": "Lurraldebus Zarautz",
+        "sources": [
+            {
+                "type": "NAP_MITMA",
+                "conjuntoDatoId": 1036
+            }
+        ]
+    },
+    {
+        "idFeed": "Metro Bilbao",
+        "sources": [
+            {
+                "type": "NAP_MITMA",
+                "conjuntoDatoId": 1066
+            }
+        ]
+    },
+    {
+        "idFeed": "Transbordador Puente Bizkaia",
+        "sources": [
+            {
+                "type": "NAP_MITMA",
+                "conjuntoDatoId": 1069
+            }
+        ]
+    },
+    {
+        "idFeed": "Transportes Urbanos de Vitoria (TUVISA)",
+        "sources": [
+            {
+                "type": "NAP_MITMA",
+                "conjuntoDatoId": 1070
             }
         ]
     }
