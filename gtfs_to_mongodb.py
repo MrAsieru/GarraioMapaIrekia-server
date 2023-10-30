@@ -128,7 +128,7 @@ def guardar(gtfs, db: Database[_DocumentType]):
             nivel: dict = lista_niveles[parada["level_id"]]
             doc["nivel"] = {
                 "idNivel": nivel.get("level_id"),
-                "indice": int(nivel.get("level_index")),
+                "indice": float(nivel.get("level_index")),
                 "nombre": nivel.get("level_name", None)
             }
 
