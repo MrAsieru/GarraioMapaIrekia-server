@@ -169,7 +169,7 @@ def main():
     else:
         db = cliente["gtfs"]
 
-    for feed in db["feeds"].find({"actualizar": True}):
+    for feed in db["feeds"].find({"actualizar.tiles": True}):
         generar(feed)
 
 

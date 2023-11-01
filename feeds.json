@@ -1,7 +1,11 @@
 [
     {
         "idFeed": "Alavabus",
-        "sources": [
+        "fuentes": [
+            {
+                "type": "ETAG",
+                "url": "https://www.geo.euskadi.eus/cartografia/DatosDescarga/Transporte/Moveuskadi/Alavabus/google_transit.zip"
+            },
             {
                 "type": "NAP_MITMA",
                 "conjuntoDatoId": 1161
@@ -9,8 +13,43 @@
         ]
     },
     {
+        "idFeed": "ALSA autobuses",
+        "fuentes": [
+            {
+                "type": "NAP_MITMA",
+                "conjuntoDatoId": 932
+            }
+        ]
+    },
+    {
+        "idFeed": "Autobus en Cantabria",
+        "fuentes": [
+            {
+                "type": "NAP_MITMA",
+                "conjuntoDatoId": 1363
+            }
+        ]
+    },
+    {
+        "idFeed": "Bermibus",
+        "fuentes": [
+            {
+                "type": "ETAG",
+                "url": "https://ctb-gtfs.s3.eu-south-2.amazonaws.com/bermibusa.zip"
+            }
+        ]
+    },
+    {
         "idFeed": "Bilbobus",
-        "sources": [
+        "fuentes": [
+            {
+                "type": "ETAG",
+                "url": "https://ctb-gtfs.s3.eu-south-2.amazonaws.com/bilbobus.zip"
+            },
+            {
+                "type": "ETAG",
+                "url": "https://www.geo.euskadi.eus/cartografia/DatosDescarga/Transporte/Moveuskadi/Bilbobus/google_transit.zip"
+            },
             {
                 "type": "NAP_MITMA",
                 "conjuntoDatoId": 1259
@@ -19,7 +58,15 @@
     },
     {
         "idFeed": "Bizkaibus",
-        "sources": [
+        "fuentes": [
+            {
+                "type": "ETAG",
+                "url": "https://ctb-gtfs.s3.eu-south-2.amazonaws.com/bizkaibus.zip"
+            },
+            {
+                "type": "ETAG",
+                "url": "https://www.geo.euskadi.eus/cartografia/DatosDescarga/Transporte/Moveuskadi/Bizkaibus/google_transit.zip"
+            },
             {
                 "type": "NAP_MITMA",
                 "conjuntoDatoId": 1061
@@ -27,8 +74,29 @@
         ]
     },
     {
-        "idFeed": "Donostiabus (Dbus)",
-        "sources": [
+        "idFeed": "Cercanias Renfe",
+        "fuentes": [
+            {
+                "type": "NAP_MITMA",
+                "conjuntoDatoId": 929
+            },
+            {
+                "type": "ETAG",
+                "url": "https://ssl.renfe.com/ftransit/Fichero_CER_FOMENTO/fomento_transit.zip"
+            },
+            {
+                "type": "ETAG",
+                "url": "https://www.geo.euskadi.eus/cartografia/DatosDescarga/Transporte/Moveuskadi/Renfe_Cercanias/google_transit.zip"
+            }
+        ]
+    },
+    {
+        "idFeed": "Donostiabus",
+        "fuentes": [
+            {
+                "type": "ETAG",
+                "url": "https://www.geo.euskadi.eus/cartografia/DatosDescarga/Transporte/Moveuskadi/ATTG/dbus/google_transit.zip"
+            },
             {
                 "type": "NAP_MITMA",
                 "conjuntoDatoId": 995
@@ -36,8 +104,30 @@
         ]
     },
     {
+        "idFeed": "Erandiobus",
+        "fuentes": [
+            {
+                "type": "ETAG",
+                "url": "https://ctb-gtfs.s3.eu-south-2.amazonaws.com/erandiobusa.zip"
+            }
+        ]
+    },
+    {
+        "idFeed": "Etxebarribus",
+        "fuentes": [
+            {
+                "type": "ETAG",
+                "url": "https://ctb-gtfs.s3.eu-south-2.amazonaws.com/etxebarribus.zip"
+            }
+        ]
+    },
+    {
         "idFeed": "Euskotren",
-        "sources": [
+        "fuentes": [
+            {
+                "type": "ETAG",
+                "url": "https://www.geo.euskadi.eus/cartografia/DatosDescarga/Transporte/Moveuskadi/Euskotren/google_transit.zip"
+            },
             {
                 "type": "NAP_MITMA",
                 "conjuntoDatoId": 1062
@@ -46,7 +136,15 @@
     },
     {
         "idFeed": "Funicular de Artxanda",
-        "sources": [
+        "fuentes": [
+            {
+                "type": "ETAG",
+                "url": "https://ctb-gtfs.s3.eu-south-2.amazonaws.com/funicularartxanda.zip"
+            },
+            {
+                "type": "ETAG",
+                "url": "https://www.geo.euskadi.eus/cartografia/DatosDescarga/Transporte/Moveuskadi/FunicularArtxanda/google_transit.zip"
+            },
             {
                 "type": "NAP_MITMA",
                 "conjuntoDatoId": 1063
@@ -54,8 +152,30 @@
         ]
     },
     {
+        "idFeed": "Kbus",
+        "fuentes": [
+            {
+                "type": "ETAG",
+                "url": "https://ctb-gtfs.s3.eu-south-2.amazonaws.com/kbus.zip"
+            }
+        ]
+    },
+    {
+        "idFeed": "LeioaBus",
+        "fuentes": [
+            {
+                "type": "ETAG",
+                "url": "https://ctb-gtfs.s3.eu-south-2.amazonaws.com/lejoanbusa.zip"
+            }
+        ]
+    },
+    {
         "idFeed": "Lurraldebus Arrasate",
-        "sources": [
+        "fuentes": [
+            {
+                "type": "ETAG",
+                "url": "https://www.geo.euskadi.eus/cartografia/DatosDescarga/Transporte/Moveuskadi/ATTG/lurraldebus_arrasate/google_transit.zip"
+            },
             {
                 "type": "NAP_MITMA",
                 "conjuntoDatoId": 997
@@ -64,7 +184,11 @@
     },
     {
         "idFeed": "Lurraldebus auif",
-        "sources": [
+        "fuentes": [
+            {
+                "type": "ETAG",
+                "url": "https://www.geo.euskadi.eus/cartografia/DatosDescarga/Transporte/Moveuskadi/ATTG/lurraldebus_auif_urb/google_transit.zip"
+            },
             {
                 "type": "NAP_MITMA",
                 "conjuntoDatoId": 998
@@ -73,7 +197,11 @@
     },
     {
         "idFeed": "Lurraldebus Eibar",
-        "sources": [
+        "fuentes": [
+            {
+                "type": "ETAG",
+                "url": "https://www.geo.euskadi.eus/cartografia/DatosDescarga/Transporte/Moveuskadi/ATTG/lurraldebus_eibar/google_transit.zip"
+            },
             {
                 "type": "NAP_MITMA",
                 "conjuntoDatoId": 999
@@ -82,7 +210,11 @@
     },
     {
         "idFeed": "Lurraldebus Ekialdebus",
-        "sources": [
+        "fuentes": [
+            {
+                "type": "ETAG",
+                "url": "https://www.geo.euskadi.eus/cartografia/DatosDescarga/Transporte/Moveuskadi/ATTG/lurraldebus_ekialdebus/google_transit.zip"
+            },
             {
                 "type": "NAP_MITMA",
                 "conjuntoDatoId": 1000
@@ -91,7 +223,11 @@
     },
     {
         "idFeed": "Lurraldebus Euskotren bus",
-        "sources": [
+        "fuentes": [
+            {
+                "type": "ETAG",
+                "url": "https://www.geo.euskadi.eus/cartografia/DatosDescarga/Transporte/Moveuskadi/ATTG/lurraldebus_euskotren_bus/google_transit.zip"
+            },
             {
                 "type": "NAP_MITMA",
                 "conjuntoDatoId": 1001
@@ -100,7 +236,11 @@
     },
     {
         "idFeed": "Lurraldebus Goierrialdea",
-        "sources": [
+        "fuentes": [
+            {
+                "type": "ETAG",
+                "url": "https://www.geo.euskadi.eus/cartografia/DatosDescarga/Transporte/Moveuskadi/ATTG/lurraldebus_goierrialdea/google_transit.zip"
+            },
             {
                 "type": "NAP_MITMA",
                 "conjuntoDatoId": 1028
@@ -109,7 +249,11 @@
     },
     {
         "idFeed": "Lurraldebus Guipuzcoana",
-        "sources": [
+        "fuentes": [
+            {
+                "type": "ETAG",
+                "url": "https://www.geo.euskadi.eus/cartografia/DatosDescarga/Transporte/Moveuskadi/ATTG/lurraldebus_gipuzkoana/google_transit.zip"
+            },
             {
                 "type": "NAP_MITMA",
                 "conjuntoDatoId": 1003
@@ -118,7 +262,11 @@
     },
     {
         "idFeed": "Lurraldebus Hernani",
-        "sources": [
+        "fuentes": [
+            {
+                "type": "ETAG",
+                "url": "https://www.geo.euskadi.eus/cartografia/DatosDescarga/Transporte/Moveuskadi/ATTG/lurraldebus_hernani/google_transit.zip"
+            },
             {
                 "type": "NAP_MITMA",
                 "conjuntoDatoId": 1029
@@ -127,7 +275,11 @@
     },
     {
         "idFeed": "Lurraldebus Lasarte",
-        "sources": [
+        "fuentes": [
+            {
+                "type": "ETAG",
+                "url": "https://www.geo.euskadi.eus/cartografia/DatosDescarga/Transporte/Moveuskadi/ATTG/lurraldebus_lasarte/google_transit.zip"
+            },
             {
                 "type": "NAP_MITMA",
                 "conjuntoDatoId": 1030
@@ -136,7 +288,11 @@
     },
     {
         "idFeed": "Lurraldebus Oiartzun",
-        "sources": [
+        "fuentes": [
+            {
+                "type": "ETAG",
+                "url": "https://www.geo.euskadi.eus/cartografia/DatosDescarga/Transporte/Moveuskadi/ATTG/lurraldebus_oiartzun/google_transit.zip"
+            },
             {
                 "type": "NAP_MITMA",
                 "conjuntoDatoId": 1031
@@ -145,7 +301,11 @@
     },
     {
         "idFeed": "Lurraldebus Pesa",
-        "sources": [
+        "fuentes": [
+            {
+                "type": "ETAG",
+                "url": "https://www.geo.euskadi.eus/cartografia/DatosDescarga/Transporte/Moveuskadi/ATTG/lurraldebus_pesa/google_transit.zip"
+            },
             {
                 "type": "NAP_MITMA",
                 "conjuntoDatoId": 1032
@@ -153,8 +313,12 @@
         ]
     },
     {
-        "idFeed": "Lurraldebus Renter\u00eda",
-        "sources": [
+        "idFeed": "Lurraldebus Renteria",
+        "fuentes": [
+            {
+                "type": "ETAG",
+                "url": "https://www.geo.euskadi.eus/cartografia/DatosDescarga/Transporte/Moveuskadi/ATTG/lurraldebus_renteria/google_transit.zip"
+            },
             {
                 "type": "NAP_MITMA",
                 "conjuntoDatoId": 1033
@@ -162,8 +326,12 @@
         ]
     },
     {
-        "idFeed": "Lurraldebus TBH (Interurbano Tolosa Buruntzaldea)",
-        "sources": [
+        "idFeed": "Lurraldebus TBH",
+        "fuentes": [
+            {
+                "type": "ETAG",
+                "url": "https://www.geo.euskadi.eus/cartografia/DatosDescarga/Transporte/Moveuskadi/ATTG/lurraldebus_tbh/google_transit.zip"
+            },
             {
                 "type": "NAP_MITMA",
                 "conjuntoDatoId": 1393
@@ -172,7 +340,11 @@
     },
     {
         "idFeed": "Lurraldebus Tolosaldea",
-        "sources": [
+        "fuentes": [
+            {
+                "type": "ETAG",
+                "url": "https://www.geo.euskadi.eus/cartografia/DatosDescarga/Transporte/Moveuskadi/ATTG/lurraldebus_tolosaldea/google_transit.zip"
+            },
             {
                 "type": "NAP_MITMA",
                 "conjuntoDatoId": 1034
@@ -181,7 +353,11 @@
     },
     {
         "idFeed": "Lurraldebus Zarautz",
-        "sources": [
+        "fuentes": [
+            {
+                "type": "ETAG",
+                "url": "https://www.geo.euskadi.eus/cartografia/DatosDescarga/Transporte/Moveuskadi/ATTG/lurraldebus_zarautz/google_transit.zip"
+            },
             {
                 "type": "NAP_MITMA",
                 "conjuntoDatoId": 1036
@@ -190,7 +366,19 @@
     },
     {
         "idFeed": "Metro Bilbao",
-        "sources": [
+        "fuentes": [
+            {
+                "type": "ETAG",
+                "url": "https://ctb-gtfs.s3.eu-south-2.amazonaws.com/metrobilbao.zip"
+            },
+            {
+                "type": "ETAG",
+                "url": "https://www.geo.euskadi.eus/cartografia/DatosDescarga/Transporte/Moveuskadi/MetroBilbao/google_transit.zip"
+            },
+            {
+                "type": "HTTP",
+                "url": "http://www.metrobilbao.eus/imports/google_transit.zip"
+            },
             {
                 "type": "NAP_MITMA",
                 "conjuntoDatoId": 1066
@@ -198,8 +386,42 @@
         ]
     },
     {
+        "idFeed": "RENFE - Media, Larga Distancia y AVE",
+        "fuentes": [
+            {
+                "type": "ETAG",
+                "url": "https://ssl.renfe.com/gtransit/Fichero_AV_LD/google_transit.zip"
+            },
+            {
+                "type": "NAP_MITMA",
+                "conjuntoDatoId": 897
+            },            
+            {
+                "type": "ETAG",
+                "url": "https://www.geo.euskadi.eus/cartografia/DatosDescarga/Transporte/Moveuskadi/Renfe/google_transit.zip"
+            }
+        ]
+    },
+    {
+        "idFeed": "Sopelbus",
+        "fuentes": [
+            {
+                "type": "ETAG",
+                "url": "https://ctb-gtfs.s3.eu-south-2.amazonaws.com/sopelbus.zip"
+            }
+        ]
+    },
+    {
         "idFeed": "Transbordador Puente Bizkaia",
-        "sources": [
+        "fuentes": [
+            {
+                "type": "ETAG",
+                "url": "https://ctb-gtfs.s3.eu-south-2.amazonaws.com/puentebizkaia.zip"
+            },
+            {
+                "type": "ETAG",
+                "url": "https://www.geo.euskadi.eus/cartografia/DatosDescarga/Transporte/Moveuskadi/Transbordador_Vizcaya/google_transit.zip"
+            },
             {
                 "type": "NAP_MITMA",
                 "conjuntoDatoId": 1069
@@ -207,8 +429,12 @@
         ]
     },
     {
-        "idFeed": "Transportes Urbanos de Vitoria (TUVISA)",
-        "sources": [
+        "idFeed": "Transportes Urbanos de Vitoria",
+        "fuentes": [
+            {
+                "type": "ETAG",
+                "url": "https://www.geo.euskadi.eus/cartografia/DatosDescarga/Transporte/Moveuskadi/TUVISA/google_transit.zip"
+            },
             {
                 "type": "NAP_MITMA",
                 "conjuntoDatoId": 1070

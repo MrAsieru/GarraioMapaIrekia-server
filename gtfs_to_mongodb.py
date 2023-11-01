@@ -111,8 +111,8 @@ def guardar(gtfs, db: Database[_DocumentType]):
             "codigo": parada.get("stop_code", None),
             "nombre": parada.get("stop_name", None),
             "descripcion": parada.get("stop_desc", None),
-            "posicionLatitud": float(parada.get("stop_lat")) if parada.get("stop_lat", "") != "" else None,
-            "posicionLongitud": float(parada.get("stop_lon")) if parada.get("stop_lon", "") != "" else None,
+            "posicionLatitud": round(float(parada.get("stop_lat")), 5) if parada.get("stop_lat", "") != "" else None,
+            "posicionLongitud": round(float(parada.get("stop_lon")), 5) if parada.get("stop_lon", "") != "" else None,
             "idZona": parada.get("zone_id", None),
             "url": parada.get("stop_url", None),
             "tipo": int(parada.get("location_type") if parada.get("location_type", "") != "" else "0"),
@@ -307,30 +307,30 @@ def guardar(gtfs, db: Database[_DocumentType]):
     #endregion
 
     #region Recorrido
-    if (os.path.exists(os.path.join(directorio_gtfs, gtfs["idFeed"], "shapes.txt"))):
-        lista_recorridos = csv_to_listdict(os.path.join(directorio_gtfs, gtfs["idFeed"], "shapes.txt"), ["shape_id"])
-        colleccion_recorridos = db["recorridos"]
+    # if (os.path.exists(os.path.join(directorio_gtfs, gtfs["idFeed"], "shapes.txt"))):
+    #     lista_recorridos = csv_to_listdict(os.path.join(directorio_gtfs, gtfs["idFeed"], "shapes.txt"), ["shape_id"])
+    #     colleccion_recorridos = db["recorridos"]
 
-        lista_documentos = []
-        for recorrido_key in lista_recorridos.keys():
-            recorrido: dict = lista_recorridos[recorrido_key]
+    #     lista_documentos = []
+    #     for recorrido_key in lista_recorridos.keys():
+    #         recorrido: dict = lista_recorridos[recorrido_key]
             
-            secuencia = []
-            for item in recorrido:
-                secuencia.append({
-                    "latitud": float(item.get("shape_pt_lat")),
-                    "longitud": float(item.get("shape_pt_lon")),
-                    "orden": int(item.get("shape_pt_sequence")),
-                    "distancia": float(item.get("shape_dist_traveled")) if item.get("shape_dist_traveled", "") != "" else None
-                })
+    #         secuencia = []
+    #         for item in recorrido:
+    #             secuencia.append({
+    #                 "latitud": round(float(item.get("shape_pt_lat")), 5),
+    #                 "longitud": round(float(item.get("shape_pt_lon")), 5),
+    #                 "orden": int(item.get("shape_pt_sequence")),
+    #                 "distancia": float(item.get("shape_dist_traveled")) if item.get("shape_dist_traveled", "") != "" else None
+    #             })
             
-            lista_documentos.append({
-                "_id": recorrido_key,
-                "idRecorrido": recorrido_key,
-                "secuencia": secuencia
-            })
+    #         lista_documentos.append({
+    #             "_id": recorrido_key,
+    #             "idRecorrido": recorrido_key,
+    #             "secuencia": secuencia
+    #         })
 
-        colleccion_recorridos.insert_many(lista_documentos)
+    #     colleccion_recorridos.insert_many(lista_documentos)
     #endregion
 
     #region Calendario
@@ -375,56 +375,56 @@ def guardar(gtfs, db: Database[_DocumentType]):
         
         lista_servicios[item["service_id"]] = fechas_servicio
 
-    for item in lista_fechas_calendario:
-        if not item["service_id"] in lista_servicios.keys():
-            lista_servicios[item["service_id"]] = []
+    # for item in lista_fechas_calendario:
+    #     if not item["service_id"] in lista_servicios.keys():
+    #         lista_servicios[item["service_id"]] = []
         
-        fecha = datetime.strptime(item["date"], "%Y%m%d")
-        if fecha_actual <= fecha:
-            if item["exception_type"] == "1":
-                lista_servicios[item["service_id"]].append(fecha)
-            elif item["exception_type"] == "2":
-                try:
-                    lista_servicios[item["service_id"]].remove(fecha)
-                except ValueError:
-                    pass
+    #     fecha = datetime.strptime(item["date"], "%Y%m%d")
+    #     if fecha_actual <= fecha:
+    #         if item["exception_type"] == "1":
+    #             lista_servicios[item["service_id"]].append(fecha)
+    #         elif item["exception_type"] == "2":
+    #             try:
+    #                 lista_servicios[item["service_id"]].remove(fecha)
+    #             except ValueError:
+    #                 pass
 
-    # Eliminar posibles fechas repetidas
-    for item in lista_servicios.keys():
-        lista_servicios[item] = list(set(lista_servicios[item]))
-        lista_servicios[item].sort()
+    # # Eliminar posibles fechas repetidas
+    # for item in lista_servicios.keys():
+    #     lista_servicios[item] = list(set(lista_servicios[item]))
+    #     lista_servicios[item].sort()
 
-    # Obtener todas las fechas
-    fechas_servicios = []
-    for item in lista_servicios.keys():
-        fechas_servicios.extend(lista_servicios[item])
+    # # Obtener todas las fechas
+    # fechas_servicios = []
+    # for item in lista_servicios.keys():
+    #     fechas_servicios.extend(lista_servicios[item])
 
-    fechas = list(set(fechas_servicios))
+    # fechas = list(set(fechas_servicios))
 
-    # Guardar fechas y sus servicios
-    lista_insert = []
-    lista_update = []
-    fechas_db = colleccion_calendario.distinct("_id", {"_id": {"$in": fechas}})
+    # # Guardar fechas y sus servicios
+    # lista_insert = []
+    # lista_update = []
+    # fechas_db = colleccion_calendario.distinct("_id", {"_id": {"$in": fechas}})
 
-    for fecha in fechas:
-        servicios = []
-        for item in lista_servicios.keys():
-            if fecha in lista_servicios[item]:
-                servicios.append(item)
+    # for fecha in fechas:
+    #     servicios = []
+    #     for item in lista_servicios.keys():
+    #         if fecha in lista_servicios[item]:
+    #             servicios.append(item)
 
-        if not fecha in fechas_db:
-            lista_insert.append({
-                "_id": fecha,
-                "fecha": fecha,
-                "servicios": servicios
-            })
-        else:
-            lista_update.append(UpdateOne({"_id": fecha}, {"$push": {"servicios": {"$each": servicios}}}))
+    #     if not fecha in fechas_db:
+    #         lista_insert.append({
+    #             "_id": fecha,
+    #             "fecha": fecha,
+    #             "servicios": servicios
+    #         })
+    #     else:
+    #         lista_update.append(UpdateOne({"_id": fecha}, {"$push": {"servicios": {"$each": servicios}}}))
     
-    if len(lista_insert) > 0:
-        colleccion_calendario.insert_many(lista_insert)
-    if len(lista_update) > 0:
-        colleccion_calendario.bulk_write(lista_update)
+    # if len(lista_insert) > 0:
+    #     colleccion_calendario.insert_many(lista_insert)
+    # if len(lista_update) > 0:
+    #     colleccion_calendario.bulk_write(lista_update)
 
     # Viaje.fechas
     lista_updates = []
@@ -502,7 +502,7 @@ def guardar(gtfs, db: Database[_DocumentType]):
             })
         colleccion_traducciones.insert_many(lista_documentos)
 
-    db["feeds"].update_one({"_id": gtfs["idFeed"]}, {"$set": {"actualizar": False}})
+    db["feeds"].update_one({"_id": gtfs["idFeed"]}, {"$set": {"actualizar.db": False}})
 
 
 def csv_to_dict(archivo, primary_key: list) -> dict:
@@ -552,21 +552,22 @@ def main():
         db = cliente["gtfs"]
 
     #TODO: Eliminar documentos que contengan id con el prefijo de los feeds que se deben actualizar
-    feeds_eliminar_ids = db["feeds"].distinct("idFeed", {"$or": [{"actualizar": True}, {"eliminar": True}]})
+    feeds_eliminar_ids = db["feeds"].distinct("idFeed", {"$or": [{"actualizar.db": True}, {"eliminar": True}]})
     db["feeds"].delete_many({"eliminar": True})
     for colleccion in ["agencias", "lineas", "paradas", "recorridos", "viajes", "traducciones", "itinerarios", "areas"]:
-        db[colleccion].delete_many({"_id": {"$regex": f"^{('|'.join(feeds_eliminar_ids))}_"}})
-    db["calendario"].update_many({}, {
-        "$pull": {
-            "servicios": {
-                "$regex": f"^{('|'.join(feeds_eliminar_ids))}_"
-            }
-        }
-    })
-    db["calendario"].delete_many({"servicios": []})
+        db[colleccion].delete_many({"_id": {"$regex": f"^({('|'.join(feeds_eliminar_ids))})_"}})
+
+    # db["calendario"].update_many({}, {
+    #     "$pull": {
+    #         "servicios": {
+    #             "$regex": f"^{('|'.join(feeds_eliminar_ids))}_"
+    #         }
+    #     }
+    # })
+    # db["calendario"].delete_many({"servicios": []})
 
     try:
-        for feed in db["feeds"].find({"actualizar": True}):
+        for feed in db["feeds"].find({"actualizar.db": True}):
             print(f"Subiendo {feed['idFeed']}...")
             guardar(feed, db)
     finally:

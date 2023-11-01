@@ -36,68 +36,79 @@ def conectar():
 
 
 def calcular(gtfs: dict, db: Database[_DocumentType]):
-    lista_agencias = csv_to_dict(os.path.join(directorio_gtfs, gtfs["idFeed"], "agency.txt"), ["agency_id"])
-    lista_lineas = csv_to_dict(os.path.join(directorio_gtfs, gtfs["idFeed"], "routes.txt"), ["route_id"])
-    lista_servicios = csv_to_listdict(os.path.join(directorio_gtfs, gtfs["idFeed"], "trips.txt"), ["service_id"])
-    lista_recorridos = csv_to_listdict(os.path.join(directorio_gtfs, gtfs["idFeed"], "shapes.txt"), ["shape_id"])
-    lista_horarios = csv_to_listdict(os.path.join(directorio_gtfs, gtfs["idFeed"], "stop_times.txt"), ["trip_id"])
-    lista_paradas = csv_to_dict(os.path.join(directorio_gtfs, gtfs["idFeed"], "stops.txt"), ["stop_id"])
+    if (os.path.exists(os.path.join(directorio_gtfs, gtfs["idFeed"], "shapes.txt"))):
+        print(gtfs["idFeed"])
+        lista_agencias = csv_to_dict(os.path.join(directorio_gtfs, gtfs["idFeed"], "agency.txt"), ["agency_id"])
+        lista_lineas = csv_to_dict(os.path.join(directorio_gtfs, gtfs["idFeed"], "routes.txt"), ["route_id"])
+        lista_servicios = csv_to_listdict(os.path.join(directorio_gtfs, gtfs["idFeed"], "trips.txt"), ["service_id"])
+        lista_recorridos = csv_to_listdict(os.path.join(directorio_gtfs, gtfs["idFeed"], "shapes.txt"), ["shape_id"])
+        lista_horarios = csv_to_listdict(os.path.join(directorio_gtfs, gtfs["idFeed"], "stop_times.txt"), ["trip_id"])
+        lista_paradas = csv_to_dict(os.path.join(directorio_gtfs, gtfs["idFeed"], "stops.txt"), ["stop_id"])
 
-    servicios_fechas = obtener_servicios_fechas(gtfs)
+        servicios_fechas = obtener_servicios_fechas(gtfs)
 
-    # Obtener diccionario con todas las posiciones de cada viaje (fecha -> agencia -> viaje -> posiciones codificadas) 
-    lista_para_subir = {}
+        # Recorrer todos los viajes de cada servicio
+        inicio_calculos = datetime.now()
+        for servicio in servicios_fechas.keys():
+            print(f"\tCalculando posiciones de: {servicio} {datetime.now().isoformat()}")
 
-    # Recorrer todos los viajes de cada servicio
-    for servicio in servicios_fechas.keys():
-        print(f"Calculando posiciones de: {servicio}")
-        for viaje in lista_servicios.get(servicio, []):
-            try:
-                # Obtener horario (viaje) y zona horaria (agencia)
-                horario = lista_horarios[viaje["trip_id"]]
-                zonaHoraria = lista_agencias[lista_lineas[viaje["route_id"]]["agency_id"]]["agency_timezone"]
+            # Obtener diccionario con todas las posiciones de cada viaje (fecha -> agencia -> viaje -> posiciones codificadas) 
+            lista_para_subir = {}
 
-                fechas_posiciones_codificadas = codificar_posiciones(posiciones_de_viaje(lista_recorridos[viaje["shape_id"]], horario, lista_paradas))
+            for viaje in lista_servicios.get(servicio, []):
+                try:
+                    # Obtener horario (viaje) y zona horaria (agencia)
+                    horario = lista_horarios[viaje["trip_id"]]
+                    zonaHoraria = lista_agencias[lista_lineas[viaje["route_id"]]["agency_id"]]["agency_timezone"]
 
-                # Recorrer todas las fechas en las que hay servicio
-                for fecha_servicio in servicios_fechas[servicio]:
-                    # Recorrer todas las fechas en las que hay datos
-                    for fecha in fechas_posiciones_codificadas.keys():
-                        # Obtener fecha con zona horaria (agencia)
-                        fecha_zona_horaria = pytz.timezone(zonaHoraria).localize(fecha.replace(year=fecha_servicio.year, month=fecha_servicio.month, day=fecha_servicio.day))
-                        
-                        # Convertir fecha a UTC
-                        fecha_utc = fecha_zona_horaria.astimezone(pytz.utc)
+                    fechas_posiciones_codificadas = codificar_posiciones(posiciones_de_viaje(lista_recorridos[viaje["shape_id"]], horario, lista_paradas))
 
-                        if not fecha_utc in lista_para_subir.keys():
-                            lista_para_subir[fecha_utc] = {}
+                    # Recorrer todas las fechas en las que hay servicio
+                    for fecha_servicio in servicios_fechas[servicio]:
+                        # Recorrer todas las fechas en las que hay datos
+                        for fecha in fechas_posiciones_codificadas.keys():
+                            # Obtener fecha con zona horaria (agencia)
+                            fecha_zona_horaria = pytz.timezone(zonaHoraria).localize(fecha.replace(year=fecha_servicio.year, month=fecha_servicio.month, day=fecha_servicio.day))
+                            
+                            # Convertir fecha a UTC
+                            fecha_utc = fecha_zona_horaria.astimezone(pytz.utc)
 
-                        if not lista_lineas[viaje["route_id"]]["agency_id"] in lista_para_subir[fecha_utc].keys():
-                            lista_para_subir[fecha_utc][lista_lineas[viaje["route_id"]]["agency_id"]] = {}
-                        
-                        lista_para_subir[fecha_utc][lista_lineas[viaje["route_id"]]["agency_id"]][viaje["trip_id"]] = fechas_posiciones_codificadas[fecha]
-            except:
-                pass
-            
-    # Crear documentos
-    lista_documentos = []
-    for fecha in lista_para_subir.keys():
-        for agencia in lista_para_subir.get(fecha, {}).keys():
-            doc_viajes = []
-            for viaje in lista_para_subir[fecha].get(agencia, {}).keys():
-                doc_viajes.append({
-                    "idViaje": viaje,
-                    "posiciones": lista_para_subir[fecha][agencia][viaje]
-                })
+                            if not fecha_utc in lista_para_subir.keys():
+                                lista_para_subir[fecha_utc] = {}
 
-            lista_documentos.append({
-                "fecha": fecha,
-                "idAgencia": agencia,
-                "viajes": doc_viajes
-            })
+                            if not lista_lineas[viaje["route_id"]]["agency_id"] in lista_para_subir[fecha_utc].keys():
+                                lista_para_subir[fecha_utc][lista_lineas[viaje["route_id"]]["agency_id"]] = {}
+                            
+                            lista_para_subir[fecha_utc][lista_lineas[viaje["route_id"]]["agency_id"]][viaje["trip_id"]] = fechas_posiciones_codificadas[fecha]
+                except:
+                    pass
 
-    # Subir documentos
-    db["posiciones"].insert_many(lista_documentos)
+            if len(lista_para_subir.keys()) > 0:
+                # Crear documentos
+                lista_documentos = []
+                for fecha in lista_para_subir.keys():
+                    for agencia in lista_para_subir.get(fecha, {}).keys():
+                        doc_viajes = []
+                        for viaje in lista_para_subir[fecha].get(agencia, {}).keys():
+                            doc_viajes.append({
+                                "idViaje": viaje,
+                                "posiciones": lista_para_subir[fecha][agencia][viaje]
+                            })
+
+                        lista_documentos.append({
+                            "fecha": fecha,
+                            "idAgencia": agencia,
+                            "viajes": doc_viajes
+                        })
+
+                # Subir documentos
+                inicio_subida = datetime.now()
+                db["posiciones"].insert_many(lista_documentos)
+                print(f"\t\tSubido en {(datetime.now()-inicio_subida).total_seconds()}s")
+        
+        print(f"\tCalculado en {(datetime.now()-inicio_calculos).total_seconds()}s")
+
+    db["feeds"].update_one({"_id": gtfs["idFeed"]}, {"$set": {"actualizar.posiciones": False}})
 
 
 def posiciones_de_viaje(recorrido: List[dict], horario: List[dict], paradas: List[dict]) -> List[dict]:
@@ -326,6 +337,11 @@ def obtener_servicios_fechas(gtfs: dict) -> List[date]:
                     lista_servicios[item["service_id"]].remove(fecha)
                 except ValueError:
                     pass
+    
+    # Eliminar servicios sin fechas
+    for item in list(lista_servicios.keys()):
+        if len(lista_servicios[item]) == 0:
+            del lista_servicios[item]
 
     # Eliminar posibles fechas repetidas
     for item in lista_servicios.keys():
@@ -368,7 +384,7 @@ def csv_to_list(archivo) -> list:
 def main():
     global config, directorio_gtfs, directorio_geojson
     start = datetime.now()
-    #load_dotenv(dotenv_path=Path('./mongodb/mongodb.env'))
+    load_dotenv(dotenv_path=Path('./mongodb/mongodb.env'))
     with open('config.json') as f:
         config = json.load(f)
 
@@ -382,11 +398,12 @@ def main():
         db = cliente["gtfs"]
 
     # Eliminar posiciones de feeds que se van a actualizar
-    feeds_actualizar_ids = db["feeds"].distinct("idFeed", {"$or": [{"actualizar": True}, {"eliminar": True}]})
-    db["posiciones"].delete_many({"agencia": {"$regex": f"^{('|'.join(feeds_actualizar_ids))}_"}})
+    feeds_actualizar_ids = db["feeds"].distinct("idFeed", {"$or": [{"actualizar.posiciones": True}, {"eliminar": True}]})
+    ids_agencias = db["agencias"].distinct("_id", {"_id": {"$regex": f"^({('|'.join(feeds_actualizar_ids))})_"}})
+    db["posiciones"].delete_many({"idAgencia": {"$in": ids_agencias}})
 
     try:
-        for feed in db["feeds"].find({"actualizar": True}):
+        for feed in db["feeds"].find({"actualizar.posiciones": True}):
             calcular(feed, db)
     finally:
         print(f"Acabado en {(datetime.now()-start).total_seconds()}s")

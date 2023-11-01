@@ -1,5 +1,6 @@
 import hashlib
 from pathlib import Path
+import re
 from typing import List
 import requests
 import zipfile
@@ -19,6 +20,118 @@ config = {}
 directorio_zip = ""
 directorio_gtfs = ""
 archivos_agency_id = ["agency.txt", "routes.txt", "fare_attributes.txt"] # Archivos que utilizan agency_id (No se incluye attributions)
+
+
+class MetodoDescarga:
+    def __init__(self, feed: dict, fuente: dict, db_feeds: Collection[_DocumentType], archivo_zip: str):
+        self.feed = feed
+        self.fuente = fuente
+        self.db_feeds = db_feeds
+        self.archivo_zip = archivo_zip
+
+    def descarga(self) -> (bool, bool):
+        pass
+
+    def guardar(self, contenido: bytes, info_db: dict):
+        with open(self.archivo_zip, 'wb') as f:
+            f.write(contenido)
+
+        # Almacenar datos en la base de datos
+        info_base = {"actualizar": {"db": True, "tiles": True, "posiciones": True}}
+        info_base.update(info_db)
+        self.db_feeds.update_one({"_id": self.feed["idFeed"]}, {"$set": info_base})
+
+
+class MetodoDescargaHTTP(MetodoDescarga):
+    def __init__(self, feed: dict, fuente: dict, db_feeds: Collection[_DocumentType], archivo_zip: str):
+        super().__init__(feed, fuente, db_feeds, archivo_zip)
+        print("\tProbando mediante HTTP")
+    
+    def descarga(self) -> (bool, bool):
+        error = True
+        actualizar = False
+        try:
+            respuesta = requests.request("GET", self.fuente["url"])
+            if (respuesta.status_code == 200):
+                # Comprobar MD5
+                md5 = hashlib.md5(respuesta.content).hexdigest()
+                if (md5 != self.feed.get("MD5", "")):
+                    super().guardar(respuesta.content, {"MD5": md5})
+                    error = False
+                    actualizar = True
+                else:
+                    error = False
+        finally:
+            return error, actualizar
+
+
+class MetodoDescargaETAG(MetodoDescarga):
+    def __init__(self, feed: dict, fuente: dict, db_feeds: Collection[_DocumentType], archivo_zip: str):
+        super().__init__(feed, fuente, db_feeds, archivo_zip)
+        print("\tProbando mediante HTTP (Etag)")
+    
+    def descarga(self) -> (bool, bool):
+        error = True
+        actualizar = False
+        try:
+            # Usar metodo HEAD para obtener solamente el encabezado
+            encabezado = requests.request("HEAD", self.fuente["url"])
+            if (encabezado.status_code == 200):
+                # Comprobar si el valor etag ha cambiado
+                if (encabezado.headers.get("etag") != self.feed.get("etag", "")):
+                    # Si ha cambiado, descargar el archivo
+                    respuesta = requests.request("GET", self.fuente["url"])
+
+                    if (respuesta.status_code == 200):
+                        # Comprobar MD5
+                        md5 = hashlib.md5(respuesta.content).hexdigest()
+                        if (md5 != self.feed.get("MD5", "")):
+                            super().guardar(respuesta.content, {"etag": encabezado.headers.get("etag"), "MD5": md5})
+                            error = False
+                            actualizar = True
+                        else:
+                            error = False
+                else:
+                    error = False
+        finally:
+            return error, actualizar
+
+
+class MetodoDescargaNAPMITMA(MetodoDescarga):
+    def __init__(self, feed: dict, fuente: dict, db_feeds: Collection[_DocumentType], archivo_zip: str):
+        super().__init__(feed, fuente, db_feeds, archivo_zip)
+        print("\tProbando mediante NAP MITMA")
+    
+    def descarga(self) -> (bool, bool):
+        error = True
+        actualizar = False
+        try:
+            # Obtener información del conjunto de datos
+            url_info = f"https://nap.mitma.es/api/Fichero/{self.fuente['conjuntoDatoId']}"
+            headers = {"ApiKey": config.get("nap_mitma_api_key"), "Accept": "application/json"}
+            info_conjunto = requests.request("GET", url_info, headers=headers)
+            if (info_conjunto.status_code == 200):
+                info_conjunto = info_conjunto.json()
+                # Comprobar si el conjunto de datos es correcto 
+                if (conjunto_correcto(info_conjunto)):
+                    # Comprobar si la fecha de actualización ha cambiado
+                    if (info_conjunto.get('ficherosDto', [{}])[0].get('fechaActualizacion', "") != self.feed.get("fechaActualizacion", "")):
+                        # Descargar fichero
+                        url_descarga = f"https://nap.mitma.es/api/Fichero/download/{info_conjunto.get('ficherosDto', [{}])[0].get('ficheroId')}"
+                        fichero = requests.request("GET", url_descarga, headers=headers)
+                        if (fichero.status_code == 200):
+                            # Comprobar MD5
+                            md5 = hashlib.md5(fichero.content).hexdigest()
+                            if (md5 != self.feed.get("MD5", "")):
+                                super().guardar(fichero.content, {"fechaActualizacion": info_conjunto.get('ficherosDto', [{}])[0].get('fechaActualizacion'), "MD5": md5})
+                                error = False
+                                actualizar = True
+                            else:
+                                error = False
+                    else:
+                        error = False
+        finally:
+            return error, actualizar
 
 
 def conectar() -> MongoClient:
@@ -44,6 +157,10 @@ def sincronizar_feeds(colleccion_feeds: Collection[_DocumentType], file_feeds: L
     if len(db_feeds_idFeeds) > 0:
         colleccion_feeds.update_many({"_id": {"$nin": file_feeds_idFeeds}}, {"$set": {"eliminar": True}})
 
+    # Actualizar fuentes de feeds existentes en la base de datos
+    for feed in db_feeds_idFeeds:
+        colleccion_feeds.update_many({"_id": feed}, {"$set": {"fuentes": file_feeds[file_feeds_idFeeds.index(feed)]["fuentes"]}})
+
     # Añadir feeds que no existen en la base de datos
     if len(feeds_nuevos) > 0:
         for feed in feeds_nuevos:
@@ -51,84 +168,32 @@ def sincronizar_feeds(colleccion_feeds: Collection[_DocumentType], file_feeds: L
         colleccion_feeds.insert_many(feeds_nuevos)
 
 
-def descargar(gtfs: dict, config: dict, db_feeds: Collection[_DocumentType]) -> bool:
+def descargar(feed: dict, config: dict, db_feeds: Collection[_DocumentType]) -> bool:
     actualizar = False
-    archivo_zip = os.path.join(directorio_zip, gtfs["idFeed"]+".zip")
-    for descarga in gtfs["sources"]:
-        error = False
-        print(gtfs["idFeed"])
-        if (descarga["type"] == "HTTP"):
-            print("HTTP")
-            respuesta = requests.request("GET", descarga["url"])
+    archivo_zip = os.path.join(directorio_zip, feed["idFeed"]+".zip")
+    print(feed["idFeed"])
+    for fuente in feed["fuentes"]:
+        descarga: MetodoDescarga = None
+        if (fuente["type"] == "HTTP"):
+            descarga = MetodoDescargaHTTP(feed, fuente, db_feeds, archivo_zip)            
+        elif (fuente["type"] == "ETAG"):
+            descarga = MetodoDescargaETAG(feed, fuente, db_feeds, archivo_zip)            
+        elif (fuente["type"] == "NAP_MITMA"):
+            descarga = MetodoDescargaNAPMITMA(feed, fuente, db_feeds, archivo_zip)
+        else:
+            continue
 
-            if (respuesta.status_code == 200):
-                # Comprobar MD5
-                md5 = hashlib.md5(respuesta.content).hexdigest()
-                if (md5 != gtfs.get("MD5", "")):
-                    with open(archivo_zip, 'wb') as f:
-                        f.write(respuesta.content)
-                    # Actualizar MD5
-                    db_feeds.update_one({"_id": gtfs["idFeed"]}, {"$set": {"MD5": md5, "actualizar": True}})
-                    actualizar = True
-            else:
-                error = True
-        elif (descarga["type"] == "GEOEUSKADI"):
-            print("GEOEUSKADI")
-            # Usar metodo HEAD para obtener solamente el encabezado
-            encabezado = requests.request("HEAD", descarga["url"])
-
-            if (encabezado.status_code == 200):
-                # Comprobar si el valor etag ha cambiado
-                if (encabezado.headers.get("etag") != gtfs.get("etag", "")):
-                    # Si ha cambiado, descargar el archivo
-                    respuesta = requests.request("GET", descarga["url"])
-
-                    if (respuesta.status_code == 200):
-                        # Comprobar MD5
-                        md5 = hashlib.md5(respuesta.content).hexdigest()
-                        if (md5 != gtfs.get("MD5", "")):
-
-                            with open(archivo_zip, 'wb') as f:
-                                f.write(respuesta.content)
-
-                            # Actualizar etag y MD5
-                            db_feeds.update_one({"_id": gtfs["idFeed"]}, {"$set": {"etag": respuesta.headers.get("etag"), "MD5": md5,"actualizar": True}})
-                            actualizar = True  
-                    else:
-                        error = True
-            else:
-                error = True
-        elif (descarga["type"] == "NAP_MITMA"):
-            print("NAP_MITMA")
-            # Obtener información del conjunto de datos
-            url_info = f"https://nap.mitma.es/api/Fichero/{descarga['conjuntoDatoId']}"
-            headers = {"ApiKey": config.get("nap_mitma_api_key"), "Accept": "application/json"}
-            info_conjunto = requests.request("GET", url_info, headers=headers)
-            if (info_conjunto.status_code == 200):
-                info_conjunto = info_conjunto.json()
-                #TODO: Comprobar si el conjunto de datos es correcto
-                if (info_conjunto.get('ficherosDto', [{}])[0].get('fechaActualizacion', "") != gtfs.get("fechaActualizacion", "")):
-                    # Descargar fichero
-                    url_descarga = f"https://nap.mitma.es/api/Fichero/download/{info_conjunto.get('ficherosDto', [{}])[0].get('ficheroId')}"
-                    fichero = requests.request("GET", url_descarga, headers=headers)
-                    if (fichero.status_code == 200):
-                        # Comprobar MD5
-                        md5 = hashlib.md5(fichero.content).hexdigest()
-                        if (md5 != gtfs.get("MD5", "")):
-                            with open(archivo_zip, 'wb') as f:
-                                f.write(fichero.content)
-
-                            # Actualizar fecha de actualización y MD5
-                            db_feeds.update_one({"_id": gtfs["idFeed"]}, {"$set": {"fechaActualizacion": info_conjunto.get('ficherosDto', [{}])[0].get('fechaActualizacion'), "MD5": md5,"actualizar": True}})
-                            actualizar = True
-                    else:
-                        error = True
-            else:
-                error = True
-        
+        error, actualizar = descarga.descarga()
         if not error:
+            print("\tDescarga correcta")
             break
+        else:
+            print("\tDescarga incorrecta")
     return actualizar
+
+
+def conjunto_correcto(conjunto: dict) -> bool:    
+    return conjunto.get("ficherosDto", [{}])[0].get("validado", False)
 
 
 def descomprimir(gtfs):
