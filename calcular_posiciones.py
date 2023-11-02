@@ -85,7 +85,7 @@ def calcular(gtfs: dict, db: Database[_DocumentType]):
 
             if len(lista_para_subir.keys()) > 0:
                 # Crear documentos
-                lista_documentos = []
+                lista_update = []
                 for fecha in lista_para_subir.keys():
                     for agencia in lista_para_subir.get(fecha, {}).keys():
                         doc_viajes = []
@@ -95,15 +95,11 @@ def calcular(gtfs: dict, db: Database[_DocumentType]):
                                 "posiciones": lista_para_subir[fecha][agencia][viaje]
                             })
 
-                        lista_documentos.append({
-                            "fecha": fecha,
-                            "idAgencia": agencia,
-                            "viajes": doc_viajes
-                        })
+                        lista_update.append(UpdateOne({"fecha": fecha, "idAgencia": agencia}, {"$push": {"viajes": {"$each": doc_viajes}}}, upsert=True))
 
                 # Subir documentos
                 inicio_subida = datetime.now()
-                db["posiciones"].insert_many(lista_documentos)
+                db["posiciones"].bulk_write(lista_update)
                 print(f"\t\tSubido en {(datetime.now()-inicio_subida).total_seconds()}s")
         
         print(f"\tCalculado en {(datetime.now()-inicio_calculos).total_seconds()}s")
@@ -195,11 +191,13 @@ def codificar_posiciones(fechas_posiciones: dict) -> dict:
     posiciones_codificadas = {}
     for fecha in fechas_posiciones.keys():
         datos = ""
+        primera_posicion = True
         for i in range(len(fechas_posiciones[fecha])):
             if fechas_posiciones[fecha][i] is None:
                 datos += "@|@|@"
-            elif i == 0:
+            elif primera_posicion:
                 datos += str(round(fechas_posiciones[fecha][i]["lat"], PRECISION_COORDENADAS)) + "|" + str(round(fechas_posiciones[fecha][i]["lon"], PRECISION_COORDENADAS)) + "|" + fechas_posiciones[fecha][i].get("proximoOrdenParada", "")
+                primera_posicion = False
             else:
                 dif_lat = int(round(fechas_posiciones[fecha][i]["lat"] - fechas_posiciones[fecha][i-1]["lat"], PRECISION_COORDENADAS) * (10 ** PRECISION_COORDENADAS))
                 dif_lon = int(round(fechas_posiciones[fecha][i]["lon"] - fechas_posiciones[fecha][i-1]["lon"], PRECISION_COORDENADAS) * (10 ** PRECISION_COORDENADAS))
