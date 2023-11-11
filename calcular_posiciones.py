@@ -4,7 +4,7 @@ import csv
 from pathlib import Path
 from typing import List
 from dotenv import load_dotenv
-from pymongo import UpdateOne
+from pymongo import InsertOne
 from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
 from pymongo.database import Database
@@ -47,6 +47,8 @@ def calcular(gtfs: dict, db: Database[_DocumentType]):
 
         servicios_fechas = obtener_servicios_fechas(gtfs)
 
+        lista_update = []
+
         # Recorrer todos los viajes de cada servicio
         inicio_calculos = datetime.now()
         for servicio in servicios_fechas.keys():
@@ -84,24 +86,25 @@ def calcular(gtfs: dict, db: Database[_DocumentType]):
                     pass
 
             if len(lista_para_subir.keys()) > 0:
+                def generador_viajes(viajes: dict):
+                    for viaje in viajes.keys():
+                        yield {
+                            "idViaje": viaje,
+                            "posiciones": viajes[viaje]
+                        }
                 # Crear documentos
-                lista_update = []
+                lista_update.clear()
                 for fecha in lista_para_subir.keys():
                     for agencia in lista_para_subir.get(fecha, {}).keys():
-                        doc_viajes = []
-                        for viaje in lista_para_subir[fecha].get(agencia, {}).keys():
-                            doc_viajes.append({
-                                "idViaje": viaje,
-                                "posiciones": lista_para_subir[fecha][agencia][viaje]
-                            })
-
-                        lista_update.append(UpdateOne({"fecha": fecha, "idAgencia": agencia}, {"$push": {"viajes": {"$each": doc_viajes}}}, upsert=True))
+                        lista_update.append(InsertOne({"fecha": fecha, "idAgencia": agencia, "idServicio": servicio, "viajes": list(generador_viajes(lista_para_subir[fecha][agencia]))}))
 
                 # Subir documentos
                 inicio_subida = datetime.now()
-                db["posiciones"].bulk_write(lista_update)
+                tamano_batch = 1000
+                for i in range(0, len(lista_update), tamano_batch):
+                    db["posiciones"].bulk_write(lista_update[i:i+tamano_batch])
                 print(f"\t\tSubido en {(datetime.now()-inicio_subida).total_seconds()}s")
-        
+            
         print(f"\tCalculado en {(datetime.now()-inicio_calculos).total_seconds()}s")
 
     db["feeds"].update_one({"_id": gtfs["idFeed"]}, {"$set": {"actualizar.posiciones": False}})
@@ -109,6 +112,8 @@ def calcular(gtfs: dict, db: Database[_DocumentType]):
 
 def posiciones_de_viaje(recorrido: List[dict], horario: List[dict], paradas: List[dict]) -> List[dict]:
     # Obtener las posiciones por cada segundo, de minuto en minuto
+
+    shape_id = recorrido[0]["shape_id"]
 
     # Ordenar recorrido y paradas
     recorrido.sort(key=lambda x: int(x["shape_pt_sequence"]))
@@ -120,12 +125,22 @@ def posiciones_de_viaje(recorrido: List[dict], horario: List[dict], paradas: Lis
 
     # Dividir recorrido en tramos entre paradas
     for i in range(1, len(horario) - 1): # El tramo final se añade fuera del bucle (-1)
-        # Obtener punto del recorrido más cercano a la parada
-        posicion_parada = Point(float(paradas[horario[i]["stop_id"]]["stop_lon"]), float(paradas[horario[i]["stop_id"]]["stop_lat"]))
+        horario_parada = horario[i]
+        parada = paradas[horario_parada["stop_id"]]
 
-        # Obtener distancia a lo largo del recorrido hasta la parada
-        d = recorrido_restante.project(posicion_parada)
+        d = parada.get("distancia", {}).get(shape_id, None)
+        if d is None:
+            # Obtener punto del recorrido más cercano a la parada
+            posicion_parada = Point(float(parada["stop_lon"]), float(parada["stop_lat"]))
 
+            # Obtener distancia a lo largo del recorrido hasta la parada
+            d = recorrido_restante.project(posicion_parada)
+
+            # Guardar distancia del recorrido en la parada para usarla posteriormente
+            if not "distancia" in parada.keys():
+                parada["distancia"] = {}
+            parada["distancia"][shape_id] = d
+        
         # Dividir recorrido en dos tramos
         tramo, recorrido_restante = cut(recorrido_restante, d)
         tramos.append(tramo)
