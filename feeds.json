@@ -13,7 +13,7 @@
         ]
     },
     {
-        "idFeed": "ALSA autobuses",
+        "idFeed": "ALSA",
         "fuentes": [
             {
                 "type": "NAP_MITMA",
@@ -22,7 +22,7 @@
         ]
     },
     {
-        "idFeed": "Autobus en Cantabria",
+        "idFeed": "AutobusEnCantabria",
         "fuentes": [
             {
                 "type": "NAP_MITMA",
@@ -74,7 +74,7 @@
         ]
     },
     {
-        "idFeed": "Cercanias Renfe",
+        "idFeed": "CercaniasRenfe",
         "fuentes": [
             {
                 "type": "NAP_MITMA",
@@ -135,7 +135,7 @@
         ]
     },
     {
-        "idFeed": "Funicular de Artxanda",
+        "idFeed": "FunicularDeArtxanda",
         "fuentes": [
             {
                 "type": "ETAG",
@@ -170,7 +170,7 @@
         ]
     },
     {
-        "idFeed": "Lurraldebus Arrasate",
+        "idFeed": "LurraldebusArrasate",
         "fuentes": [
             {
                 "type": "ETAG",
@@ -183,7 +183,7 @@
         ]
     },
     {
-        "idFeed": "Lurraldebus auif",
+        "idFeed": "LurraldebusAUIF",
         "fuentes": [
             {
                 "type": "ETAG",
@@ -196,7 +196,7 @@
         ]
     },
     {
-        "idFeed": "Lurraldebus Eibar",
+        "idFeed": "LurraldebusEibar",
         "fuentes": [
             {
                 "type": "ETAG",
@@ -209,7 +209,7 @@
         ]
     },
     {
-        "idFeed": "Lurraldebus Ekialdebus",
+        "idFeed": "LurraldebusEkialdebus",
         "fuentes": [
             {
                 "type": "ETAG",
@@ -222,7 +222,7 @@
         ]
     },
     {
-        "idFeed": "Lurraldebus Euskotren bus",
+        "idFeed": "LurraldebusEuskotren",
         "fuentes": [
             {
                 "type": "ETAG",
@@ -235,7 +235,7 @@
         ]
     },
     {
-        "idFeed": "Lurraldebus Goierrialdea",
+        "idFeed": "LurraldebusGoierrialdea",
         "fuentes": [
             {
                 "type": "ETAG",
@@ -248,7 +248,7 @@
         ]
     },
     {
-        "idFeed": "Lurraldebus Guipuzcoana",
+        "idFeed": "LurraldebusGuipuzcoana",
         "fuentes": [
             {
                 "type": "ETAG",
@@ -261,7 +261,7 @@
         ]
     },
     {
-        "idFeed": "Lurraldebus Hernani",
+        "idFeed": "LurraldebusHernani",
         "fuentes": [
             {
                 "type": "ETAG",
@@ -274,7 +274,7 @@
         ]
     },
     {
-        "idFeed": "Lurraldebus Lasarte",
+        "idFeed": "LurraldebusLasarte",
         "fuentes": [
             {
                 "type": "ETAG",
@@ -287,7 +287,7 @@
         ]
     },
     {
-        "idFeed": "Lurraldebus Oiartzun",
+        "idFeed": "LurraldebusOiartzun",
         "fuentes": [
             {
                 "type": "ETAG",
@@ -300,7 +300,7 @@
         ]
     },
     {
-        "idFeed": "Lurraldebus Pesa",
+        "idFeed": "LurraldebusPesa",
         "fuentes": [
             {
                 "type": "ETAG",
@@ -313,7 +313,7 @@
         ]
     },
     {
-        "idFeed": "Lurraldebus Renteria",
+        "idFeed": "LurraldebusRenteria",
         "fuentes": [
             {
                 "type": "ETAG",
@@ -326,7 +326,7 @@
         ]
     },
     {
-        "idFeed": "Lurraldebus TBH",
+        "idFeed": "LurraldebusTBH",
         "fuentes": [
             {
                 "type": "ETAG",
@@ -339,7 +339,7 @@
         ]
     },
     {
-        "idFeed": "Lurraldebus Tolosaldea",
+        "idFeed": "LurraldebusTolosaldea",
         "fuentes": [
             {
                 "type": "ETAG",
@@ -352,7 +352,7 @@
         ]
     },
     {
-        "idFeed": "Lurraldebus Zarautz",
+        "idFeed": "LurraldebusZarautz",
         "fuentes": [
             {
                 "type": "ETAG",
@@ -365,7 +365,7 @@
         ]
     },
     {
-        "idFeed": "Metro Bilbao",
+        "idFeed": "MetroBilbao",
         "fuentes": [
             {
                 "type": "ETAG",
@@ -386,7 +386,7 @@
         ]
     },
     {
-        "idFeed": "RENFE - Media, Larga Distancia y AVE",
+        "idFeed": "RENFE_MD_LD_AVE",
         "fuentes": [
             {
                 "type": "ETAG",
@@ -412,7 +412,7 @@
         ]
     },
     {
-        "idFeed": "Transbordador Puente Bizkaia",
+        "idFeed": "TransbordadorPuenteBizkaia",
         "fuentes": [
             {
                 "type": "ETAG",
@@ -429,7 +429,7 @@
         ]
     },
     {
-        "idFeed": "Transportes Urbanos de Vitoria",
+        "idFeed": "TransportesUrbanosDeVitoria",
         "fuentes": [
             {
                 "type": "ETAG",

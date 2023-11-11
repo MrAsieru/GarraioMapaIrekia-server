@@ -235,7 +235,14 @@ def guardar(gtfs, db: Database[_DocumentType]):
     # Parada.lineas
     lista_updates = []
     for parada_key in parada_lineas.keys():
-        lista_updates.append(UpdateOne({"_id": parada_key}, {"$set": {"lineas": parada_lineas[parada_key]}}))
+        lista_updates.append(UpdateOne({"_id": parada_key}, {"$set": {"lineas": list(set(parada_lineas[parada_key]))}}))
+    colleccion_paradas.bulk_write(lista_updates)
+    
+    # Parada.agencias
+    lista_updates = []
+    for parada_key in parada_lineas.keys():
+        # lista de agency_id de las lineas de una parada
+        lista_updates.append(UpdateOne({"_id": parada_key}, {"$set": {"agencias": list(set([lista_lineas[linea]["agency_id"] for linea in set(parada_lineas[parada_key])]))}}))
     colleccion_paradas.bulk_write(lista_updates)
 
     # Parada.viajes
@@ -554,7 +561,7 @@ def main():
     #TODO: Eliminar documentos que contengan id con el prefijo de los feeds que se deben actualizar
     feeds_eliminar_ids = db["feeds"].distinct("idFeed", {"$or": [{"actualizar.db": True}, {"eliminar": True}]})
     db["feeds"].delete_many({"eliminar": True})
-    for colleccion in ["agencias", "lineas", "paradas", "recorridos", "viajes", "traducciones", "itinerarios", "areas"]:
+    for colleccion in ["agencias", "lineas", "paradas", "traducciones", "viajes"]:
         db[colleccion].delete_many({"_id": {"$regex": f"^({('|'.join(feeds_eliminar_ids))})_"}})
 
     # db["calendario"].update_many({}, {
