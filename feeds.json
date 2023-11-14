@@ -37,6 +37,10 @@
                 "type": "ETAG",
                 "url": "https://ctb-gtfs.s3.eu-south-2.amazonaws.com/bermibusa.zip"
             }
+        ],
+        "tiempoReal": [
+            "https://ctb-gtfs-rt.s3.eu-south-2.amazonaws.com/bermibusa-vehicle-positions.pb",
+            "https://ctb-gtfs-rt.s3.eu-south-2.amazonaws.com/bermibusa-service-alerts.pb"
         ]
     },
     {
@@ -54,6 +58,9 @@
                 "type": "NAP_MITMA",
                 "conjuntoDatoId": 1259
             }
+        ],
+        "tiempoReal": [
+            "https://ctb-gtfs-rt.s3.eu-south-2.amazonaws.com/bilbobus-vehicle-positions.pb"
         ]
     },
     {
@@ -71,6 +78,11 @@
                 "type": "NAP_MITMA",
                 "conjuntoDatoId": 1061
             }
+        ],
+        "tiempoReal":[
+            "https://baliabideak.bizkaia.eus/Bizkaibus/GTFSRealTime/FeedVehiculos.pb",
+            "https://baliabideak.bizkaia.eus/Bizkaibus/GTFSRealTime/FeedTripUpdates.pb",
+            "https://baliabideak.bizkaia.eus/Bizkaibus/GTFSRealTime/FeedAlerts.pb"
         ]
     },
     {
@@ -110,6 +122,10 @@
                 "type": "ETAG",
                 "url": "https://ctb-gtfs.s3.eu-south-2.amazonaws.com/erandiobusa.zip"
             }
+        ],
+        "tiempoReal": [
+            "https://ctb-gtfs-rt.s3.eu-south-2.amazonaws.com/erandiobusa-vehicle-positions.pb",
+            "https://ctb-gtfs-rt.s3.eu-south-2.amazonaws.com/erandiobusa-service-alerts.pb"
         ]
     },
     {
@@ -119,6 +135,10 @@
                 "type": "ETAG",
                 "url": "https://ctb-gtfs.s3.eu-south-2.amazonaws.com/etxebarribus.zip"
             }
+        ],
+        "tiempoReal":[
+            "https://ctb-gtfs-rt.s3.eu-south-2.amazonaws.com/etxebarribus-vehicle-positions.pb",
+            "https://ctb-gtfs-rt.s3.eu-south-2.amazonaws.com/etxebarribus-service-alerts.pb"
         ]
     },
     {
@@ -158,6 +178,10 @@
                 "type": "ETAG",
                 "url": "https://ctb-gtfs.s3.eu-south-2.amazonaws.com/kbus.zip"
             }
+        ],
+        "tiempoReal": [
+            "https://ctb-gtfs-rt.s3.eu-south-2.amazonaws.com/kbus-vehicle-positions.pb",
+            "https://ctb-gtfs-rt.s3.eu-south-2.amazonaws.com/kbus-service-alerts.pb"
         ]
     },
     {
@@ -167,6 +191,10 @@
                 "type": "ETAG",
                 "url": "https://ctb-gtfs.s3.eu-south-2.amazonaws.com/lejoanbusa.zip"
             }
+        ],
+        "tiempoReal": [
+            "https://ctb-gtfs-rt.s3.eu-south-2.amazonaws.com/lejoanbusa-vehicle-positions.pb",
+            "https://ctb-gtfs-rt.s3.eu-south-2.amazonaws.com/lejoanbusa-service-alerts.pb"
         ]
     },
     {
@@ -383,6 +411,11 @@
                 "type": "NAP_MITMA",
                 "conjuntoDatoId": 1066
             }
+        ],
+        "tiempoReal": [
+            "https://ctb-gtfs-rt.s3.eu-south-2.amazonaws.com/metro-bilbao-vehicle-positions.pb",
+            "https://ctb-gtfs-rt.s3.eu-south-2.amazonaws.com/metro-bilbao-trip-updates.pb",
+            "https://ctb-gtfs-rt.s3.eu-south-2.amazonaws.com/metro-bilbao-service-alerts.pb"
         ]
     },
     {
@@ -409,6 +442,10 @@
                 "type": "ETAG",
                 "url": "https://ctb-gtfs.s3.eu-south-2.amazonaws.com/sopelbus.zip"
             }
+        ],
+        "tiempoReal": [
+            "https://ctb-gtfs-rt.s3.eu-south-2.amazonaws.com/sopelbus-vehicle-positions.pb",
+            "https://ctb-gtfs-rt.s3.eu-south-2.amazonaws.com/sopelbus-service-alerts.pb"
         ]
     },
     {
