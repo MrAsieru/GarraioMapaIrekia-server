@@ -47,38 +47,39 @@ def generar(gtfs, db_paradas: Collection[_DocumentType]):
     # Guardar paradas
     for stop in stops_list:
         agencias = db_paradas.find_one({"_id": stop["stop_id"]}, {"agencias": 1}).get("agencias", [])
-        for agencia in agencias:
-            lon = round(float(stop.get("stop_lon")), 5) # Redondear a 5 decimales para ahorrar espacio
-            lat = round(float(stop.get("stop_lat")), 5)
+        
+        lon = round(float(stop.get("stop_lon")), 5) # Redondear a 5 decimales para ahorrar espacio
+        lat = round(float(stop.get("stop_lat")), 5)
 
-            feature = {
-                "type": "Feature",
-                "geometry": {
-                    "type": "Point",
-                    "coordinates": [lon, lat]
-                },
-                "properties": {
-                    "stop_id": stop["stop_id"],
-                    "name": stop.get("stop_name"),
-                    "zone_id": stop.get("zone_id"),
-                    "location_type": stop.get("location_type") if stop.get("location_type", "") != "" else "0",
-                    "parent_station": stop.get("parent_station"),
-                    "platform_code": stop.get("platform_code")
-                },
-                "tippecanoe" : { "layer" : f"{agencia}_paradas" } # Establecer layer para tippecanoe
-            }
+        feature = {
+            "type": "Feature",
+            "geometry": {
+                "type": "Point",
+                "coordinates": [lon, lat]
+            },
+            "properties": {
+                "stop_id": stop["stop_id"],
+                "name": stop.get("stop_name"),
+                "zone_id": stop.get("zone_id"),
+                "location_type": stop.get("location_type") if stop.get("location_type", "") != "" else "0",
+                "parent_station": stop.get("parent_station"),
+                "platform_code": stop.get("platform_code"),
+                "agencias": agencias
+            },
+            "tippecanoe" : { "layer" : "paradas" } # Establecer layer para tippecanoe
+        }
 
-            # Actualizar bbox
-            if lon < bbox[0]: # minLon
-                bbox[0] = lon
-            elif lon > bbox[2]: # maxLon
-                bbox[2] = lon
-            if lat < bbox[1]: # minLat
-                bbox[1] = lat
-            elif lat > bbox[3]: # maxLat
-                bbox[3] = lat
+        # Actualizar bbox
+        if lon < bbox[0]: # minLon
+            bbox[0] = lon
+        elif lon > bbox[2]: # maxLon
+            bbox[2] = lon
+        if lat < bbox[1]: # minLat
+            bbox[1] = lat
+        elif lat > bbox[3]: # maxLat
+            bbox[3] = lat
 
-            geojson["features"].append(feature)
+        geojson["features"].append(feature)
 
     # Comprobar si existe shapes.txt
     if os.path.isfile(os.path.join(directorio_gtfs, gtfs["idFeed"], "shapes.txt")):
@@ -131,7 +132,7 @@ def generar(gtfs, db_paradas: Collection[_DocumentType]):
                         "color": route.get("route_color") if route.get("route_color", "").startswith('#') else "#"+route.get("route_color", ""),
                         "text_color": route.get("route_text_color") if route.get("route_text_color", "").startswith('#') else "#"+route.get("route_text_color", "")
                     },
-                    "tippecanoe" : { "layer" : f"{route['agency_id']}_lineas" } # Establecer layer para tippecanoe
+                    "tippecanoe" : { "layer" : "lineas" } # Establecer layer para tippecanoe
                 }
 
                 geojson["features"].append(feature)
@@ -182,6 +183,7 @@ def main():
 
     for feed in db["feeds"].find({"actualizar.tiles": True}):
         generar(feed, db["paradas"])
+        db["feeds"].update_many({"idFeed": feed["idFeed"]}, {"$set": {"actualizar.tiles": False}})
 
 
 if __name__ == '__main__':

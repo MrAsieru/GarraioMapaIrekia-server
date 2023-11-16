@@ -1,10 +1,6 @@
 #!/bin/sh
-# Genera archivos tiles de cada geojson
-for file in geojson/*.geojson; do
-    filename=$(basename "$file")
-    filename="${filename%.*}"
-    sudo tippecanoe -z18 -B 10 -f -o tiles/"$filename".pmtiles "$file"
-done
+# Genera archivos tiles de todos los geojson
+sudo tippecanoe -z18 -B 10 -f -o tiles.pmtiles geojson/*.geojson
 
 # Reiniciar servidor Martin
 docker compose restart martin
