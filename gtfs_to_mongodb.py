@@ -61,7 +61,7 @@ def guardar(gtfs, db: Database[_DocumentType]):
         color = linea.get("route_color", None)
         if color is not None and not color.startswith('#'):
             color = "#"+color
-        colorTexto = linea.get("route_color", None)
+        colorTexto = linea.get("route_text_color", None)
         if colorTexto is not None and not colorTexto.startswith('#'):
             colorTexto = "#"+colorTexto
         lista_documentos.append({
