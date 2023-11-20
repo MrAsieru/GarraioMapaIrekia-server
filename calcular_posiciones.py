@@ -44,6 +44,7 @@ def calcular(gtfs: dict, db: Database[_DocumentType]):
         lista_recorridos = csv_to_listdict(os.path.join(directorio_gtfs, gtfs["idFeed"], "shapes.txt"), ["shape_id"])
         lista_horarios = csv_to_listdict(os.path.join(directorio_gtfs, gtfs["idFeed"], "stop_times.txt"), ["trip_id"])
         lista_paradas = csv_to_dict(os.path.join(directorio_gtfs, gtfs["idFeed"], "stops.txt"), ["stop_id"])
+        lista_viajes = csv_to_dict(os.path.join(directorio_gtfs, gtfs["idFeed"], "trips.txt"), ["trip_id"])
 
         servicios_fechas = obtener_servicios_fechas(gtfs)
 
@@ -89,6 +90,7 @@ def calcular(gtfs: dict, db: Database[_DocumentType]):
                 def generador_viajes(viajes: dict):
                     for viaje in viajes.keys():
                         yield {
+                            "idLinea": lista_viajes[viaje]["route_id"],
                             "idViaje": viaje,
                             "posiciones": viajes[viaje]
                         }
