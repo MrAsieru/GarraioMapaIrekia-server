@@ -180,6 +180,7 @@ def guardar(gtfs, db: Database[_DocumentType]):
 
         doc = {
             "_id": viaje.get("trip_id"),
+            "idAgencia": lista_lineas.get(viaje.get("route_id")).get("agency_id"),
             "idViaje": viaje.get("trip_id"),
             "idLinea": viaje.get("route_id"),
             "idServicio": viaje.get("service_id"),
