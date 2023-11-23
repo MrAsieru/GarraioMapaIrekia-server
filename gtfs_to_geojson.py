@@ -31,7 +31,7 @@ def conectar() -> MongoClient:
     return cliente
 
 
-def generar(gtfs, db_paradas: Collection[_DocumentType], db_lineas: Collection[_DocumentType]):
+def generar(gtfs, db_paradas: Collection[_DocumentType], db_lineas: Collection[_DocumentType], db_agencias: Collection[_DocumentType]):
     geojson = {
         "type": "FeatureCollection",
         "bbox": [],
@@ -44,6 +44,7 @@ def generar(gtfs, db_paradas: Collection[_DocumentType], db_lineas: Collection[_
     # Incializar bbox con la primera coordenada
     print(gtfs["idFeed"])
     bbox = [round(float(stops_list[0]["stop_lon"]), 5), round(float(stops_list[0]["stop_lat"]), 5), round(float(stops_list[0]["stop_lon"]), 5), round(float(stops_list[0]["stop_lat"]), 5)]
+    agencias_bbox = {} # idAgencia: [minLon, minLat, maxLon, maxLat]
 
     # Guardar paradas
     for stop in stops_list:
@@ -80,6 +81,20 @@ def generar(gtfs, db_paradas: Collection[_DocumentType], db_lineas: Collection[_
         elif lat > bbox[3]: # maxLat
             bbox[3] = lat
 
+        # Actualizar bbox (agencia)
+        for agencia in agencias:
+            if agencia not in agencias_bbox.keys():
+                agencias_bbox[agencia] = [lon, lat, lon, lat]
+            else:
+                if lon < agencias_bbox[agencia][0]:
+                    agencias_bbox[agencia][0] = lon
+                elif lon > agencias_bbox[agencia][2]:
+                    agencias_bbox[agencia][2] = lon
+                if lat < agencias_bbox[agencia][1]:
+                    agencias_bbox[agencia][1] = lat
+                elif lat > agencias_bbox[agencia][3]:
+                    agencias_bbox[agencia][3] = lat
+
         geojson["features"].append(feature)
 
     # Comprobar si existe shapes.txt
@@ -115,7 +130,7 @@ def generar(gtfs, db_paradas: Collection[_DocumentType], db_lineas: Collection[_
                 elif lat > shapes_bbox[shape["shape_id"]][3]:
                     shapes_bbox[shape["shape_id"]][3] = lat
 
-            # Actualizar bbox (agencia)
+            # Actualizar bbox (feed)
             if lon < bbox[0]: # minLon
                 bbox[0] = lon
             elif lon > bbox[2]: # maxLon
@@ -133,20 +148,34 @@ def generar(gtfs, db_paradas: Collection[_DocumentType], db_lineas: Collection[_
 
             # Crear feature (en caso de que el shape tenga más de una ruta asociada, se creará una feature por cada una)
             for route_id in route_ids:
-                # Establecer BBOX de la linea
+                # Actualizar BBOX de la linea
                 if route_id not in lineas_bbox.keys():
                     lineas_bbox[route_id] = [shapes_bbox[shape_id][0], shapes_bbox[shape_id][1], shapes_bbox[shape_id][2], shapes_bbox[shape_id][3]]
                 else:
                     if shapes_bbox[shape_id][0] < lineas_bbox[route_id][0]:
                         lineas_bbox[route_id][0] = shapes_bbox[shape_id][0]
-                    elif shapes_bbox[shape_id][0] > lineas_bbox[route_id][2]:
-                        lineas_bbox[route_id][2] = shapes_bbox[shape_id][0]
+                    elif shapes_bbox[shape_id][2] > lineas_bbox[route_id][2]:
+                        lineas_bbox[route_id][2] = shapes_bbox[shape_id][2]
                     if shapes_bbox[shape_id][1] < lineas_bbox[route_id][1]:
                         lineas_bbox[route_id][1] = shapes_bbox[shape_id][1]
-                    elif shapes_bbox[shape_id][1] > lineas_bbox[route_id][3]:
-                        lineas_bbox[route_id][3] = shapes_bbox[shape_id][1]
+                    elif shapes_bbox[shape_id][3] > lineas_bbox[route_id][3]:
+                        lineas_bbox[route_id][3] = shapes_bbox[shape_id][3]
 
                 route = [r for r in routes if r["route_id"] == route_id][0]
+
+                # Actualizar BBOX de la agencia
+                if route["agency_id"] not in agencias_bbox.keys():
+                    agencias_bbox[route["agency_id"]] = [shapes_bbox[shape_id][0], shapes_bbox[shape_id][1], shapes_bbox[shape_id][2], shapes_bbox[shape_id][3]]
+                else:
+                    if shapes_bbox[shape_id][0] < agencias_bbox[route["agency_id"]][0]:
+                        agencias_bbox[route["agency_id"]][0] = shapes_bbox[shape_id][0]
+                    elif shapes_bbox[shape_id][2] > agencias_bbox[route["agency_id"]][2]:
+                        agencias_bbox[route["agency_id"]][2] = shapes_bbox[shape_id][2]
+                    if shapes_bbox[shape_id][1] < agencias_bbox[route["agency_id"]][1]:
+                        agencias_bbox[route["agency_id"]][1] = shapes_bbox[shape_id][1]
+                    elif shapes_bbox[shape_id][3] > agencias_bbox[route["agency_id"]][3]:
+                        agencias_bbox[route["agency_id"]][3] = shapes_bbox[shape_id][3]
+                
                 feature = {
                     "type": "Feature",
                     "geometry": {
@@ -223,8 +252,14 @@ def generar(gtfs, db_paradas: Collection[_DocumentType], db_lineas: Collection[_
                     bbox[3] = parada["posicionLatitud"]
             
             lista_update.append(UpdateOne({"_id": linea["route_id"]}, {"$set": {"bbox": bbox}}))
-    
+
     db_lineas.bulk_write(lista_update)
+
+    # Guardar BBOX de agencias
+    lista_update = []
+    for agencia in agencias_bbox.keys():
+        lista_update.append(UpdateOne({"_id": agencia}, {"$set": {"bbox": agencias_bbox[agencia]}}))
+    db_agencias.bulk_write(lista_update)
     
     # Guardar bbox final
     geojson["bbox"] = bbox
@@ -280,7 +315,7 @@ def main():
             pass
 
     for feed in db["feeds"].find({"actualizar.tiles": True}):
-        generar(feed, db["paradas"], db["lineas"])
+        generar(feed, db["paradas"], db["lineas"], db["agencias"])
         db["feeds"].update_many({"idFeed": feed["idFeed"]}, {"$set": {"actualizar.tiles": False}})
 
 
