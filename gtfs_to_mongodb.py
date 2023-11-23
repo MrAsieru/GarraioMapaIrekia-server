@@ -92,7 +92,8 @@ def guardar(gtfs, db: Database[_DocumentType]):
     lista_updates = []
     for agencia_key in agencia_lineas.keys():
         lista_updates.append(UpdateOne({"_id": agencia_key}, {"$set": {"lineas": agencia_lineas[agencia_key]}}))
-    colleccion_agencias.bulk_write(lista_updates)
+    if (len(lista_updates) > 0):
+        colleccion_agencias.bulk_write(lista_updates)
     #endregion
 
     #region Parada
@@ -101,9 +102,17 @@ def guardar(gtfs, db: Database[_DocumentType]):
         lista_niveles = csv_to_dict(os.path.join(directorio_gtfs, gtfs["idFeed"], "levels.txt"), ["level_id"])
     colleccion_paradas = db["paradas"]
 
+    paradas_padre = {} # paradaPadre: [paradasHijas]
+
     lista_documentos = []
     for parada_key in lista_paradas.keys():
         parada: dict = lista_paradas[parada_key]
+
+        # Añadir parada a la lista de paradas hijas de su parada padre
+        if (parada.get("parent_station", "") != ""):
+            if not parada["parent_station"] in paradas_padre.keys():
+                paradas_padre[parada["parent_station"]] = []
+            paradas_padre[parada["parent_station"]].append(parada["stop_id"])
 
         doc = {
             "_id": parada.get("stop_id"),
@@ -135,6 +144,14 @@ def guardar(gtfs, db: Database[_DocumentType]):
         lista_documentos.append(doc)
 
     colleccion_paradas.insert_many(lista_documentos)
+    #endregion
+
+    #region Parada.paradasHijas
+    lista_updates = []
+    for parada_key in paradas_padre.keys():
+        lista_updates.append(UpdateOne({"_id": parada_key}, {"$set": {"paradasHijas": paradas_padre[parada_key]}}))
+    if len(lista_updates) > 0:
+        colleccion_paradas.bulk_write(lista_updates)
     #endregion
 
     #region Viaje
@@ -225,32 +242,37 @@ def guardar(gtfs, db: Database[_DocumentType]):
     lista_updates = []
     for linea_key in linea_viajes.keys():
         lista_updates.append(UpdateOne({"_id": linea_key}, {"$set": {"viajes": linea_viajes[linea_key]}}))
-    colleccion_lineas.bulk_write(lista_updates)
+    if (len(lista_updates) > 0):
+        colleccion_lineas.bulk_write(lista_updates)
 
     # Linea.paradas
     lista_updates = []
     for linea_key in linea_paradas.keys():
         lista_updates.append(UpdateOne({"_id": linea_key}, {"$set": {"paradas": list(set(linea_paradas[linea_key]))}}))
-    colleccion_lineas.bulk_write(lista_updates)
+    if (len(lista_updates) > 0):
+        colleccion_lineas.bulk_write(lista_updates)
 
     # Parada.lineas
     lista_updates = []
     for parada_key in parada_lineas.keys():
         lista_updates.append(UpdateOne({"_id": parada_key}, {"$set": {"lineas": list(set(parada_lineas[parada_key]))}}))
-    colleccion_paradas.bulk_write(lista_updates)
+    if (len(lista_updates) > 0):
+        colleccion_paradas.bulk_write(lista_updates)
     
     # Parada.agencias
     lista_updates = []
     for parada_key in parada_lineas.keys():
         # lista de agency_id de las lineas de una parada
         lista_updates.append(UpdateOne({"_id": parada_key}, {"$set": {"agencias": list(set([lista_lineas[linea]["agency_id"] for linea in set(parada_lineas[parada_key])]))}}))
-    colleccion_paradas.bulk_write(lista_updates)
+    if (len(lista_updates) > 0):
+        colleccion_paradas.bulk_write(lista_updates)
 
     # Parada.viajes
     lista_updates = []
     for parada_key in parada_viajes.keys():
         lista_updates.append(UpdateOne({"_id": parada_key}, {"$set": {"viajes": parada_viajes[parada_key]}}))
-    colleccion_paradas.bulk_write(lista_updates)
+    if (len(lista_updates) > 0):
+        colleccion_paradas.bulk_write(lista_updates)
     #endregion
 
     #region Area
@@ -284,7 +306,8 @@ def guardar(gtfs, db: Database[_DocumentType]):
         lista_updates = []
         for parada_key in parada_areas.keys():
             lista_updates.append(UpdateOne({"_id": parada_key}, {"$set": {"areas": parada_areas[parada_key]}}))
-        colleccion_paradas.bulk_write(lista_updates)
+        if (len(lista_updates) > 0):
+            colleccion_paradas.bulk_write(lista_updates)
     #endregion
 
     #region Itinerario
@@ -439,7 +462,8 @@ def guardar(gtfs, db: Database[_DocumentType]):
     for viaje_key in lista_viajes.keys():
         viaje: dict = lista_viajes[viaje_key]
         lista_updates.append(UpdateOne({"_id": viaje_key}, {"$set": {"fechas": lista_servicios.get(viaje["service_id"])}}))
-    colleccion_viajes.bulk_write(lista_updates)
+    if (len(lista_updates) > 0):
+        colleccion_viajes.bulk_write(lista_updates)
 
     # Eliminar viajes que no contengan fecha (realizados en el pasado)
     colleccion_viajes.delete_many({"fechas": {"$type": "null"}})
