@@ -245,7 +245,7 @@ def adaptar_datos(gtfs):
             for fila in reader: # Recorrer cada fila
                 for col in reader.fieldnames:
                     fila[col] = fila[col].strip() if fila[col] != None else fila[col] # Limpiar columna de espacio innecesarios
-                    if col in columnas_id and (col != "parent_station" or fila[col] != ''): # La columna es un id y si es parent_station no está vacía
+                    if col in columnas_id and fila[col] != '': # La columna es un id y si es parent_station no está vacía
                         fila[col] = gtfs["idFeed"] + "_" + fila[col] # Actualizar ids con idFeed como prefijo
                     if col == "route_sort_order" and fila[col] == "": # Actualizar route_sort_order en caso de que no tenga valor
                         fila[col] = contador_orden

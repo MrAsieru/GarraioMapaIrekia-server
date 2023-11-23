@@ -59,10 +59,10 @@ def guardar(gtfs, db: Database[_DocumentType]):
     for route_key in lista_lineas.keys():
         linea: dict = lista_lineas[route_key]
         color = linea.get("route_color", None)
-        if color is not None and not color.startswith('#'):
+        if color is not None and color != "":
             color = "#"+color
         colorTexto = linea.get("route_text_color", None)
-        if colorTexto is not None and not colorTexto.startswith('#'):
+        if colorTexto is not None and colorTexto != "":
             colorTexto = "#"+colorTexto
         lista_documentos.append({
             "_id": linea.get("route_id"),
@@ -180,7 +180,7 @@ def guardar(gtfs, db: Database[_DocumentType]):
 
         doc = {
             "_id": viaje.get("trip_id"),
-            "idAgencia": lista_lineas.get(viaje.get("route_id")).get("agency_id"),
+            "idAgencia": lista_lineas.get(viaje.get("route_id"), {}).get("agency_id"),
             "idViaje": viaje.get("trip_id"),
             "idLinea": viaje.get("route_id"),
             "idServicio": viaje.get("service_id"),
