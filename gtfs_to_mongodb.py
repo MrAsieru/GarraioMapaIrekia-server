@@ -245,6 +245,42 @@ def guardar(gtfs, db: Database[_DocumentType]):
     if (len(lista_updates) > 0):
         colleccion_lineas.bulk_write(lista_updates)
 
+    # Linea.patrones
+    lista_updates = []
+    for linea_key in linea_viajes.keys():
+        patrones_linea_tuplas = {} # Patron: {de: idParada, a: idParada, idDireccion: number}
+        for viaje in linea_viajes[linea_key]:
+            horario = sorted(lista_horarios.get(viaje) or [], key=lambda x: int(x["stop_sequence"]))
+            viaje_objeto = lista_viajes.get(viaje)
+            secuencia_paradas = tuple([item["stop_id"] for item in horario])
+            if (len(secuencia_paradas) > 0):
+                tmp = patrones_linea_tuplas.get(secuencia_paradas, None)
+                if tmp is None:
+                    patrones_linea_tuplas[secuencia_paradas] = {
+                        "de": lista_paradas[secuencia_paradas[0]].get("stop_name", ""),
+                        "a": lista_paradas[secuencia_paradas[-1]].get("stop_name", ""),
+                        "idDireccion": lista_viajes[viaje].get("direction_id", None),
+                        "letrero": lista_viajes[viaje].get("trip_headsign", None),
+                        "viajes": [viaje]
+                    }
+                else:
+                    tmp["viajes"].append(viaje)
+                    tmp["primerServicio"] = min(tmp["primerServicio"], horario[0].get("arrival_time", ""))
+        patrones = []
+        for patron in patrones_linea_tuplas.keys():
+            patrones.append({
+                "de": patrones_linea_tuplas[patron]["de"],
+                "a": patrones_linea_tuplas[patron]["a"],
+                "idDireccion": patrones_linea_tuplas[patron]["idDireccion"],
+                "letrero": patrones_linea_tuplas[patron]["letrero"],
+                "viajes": patrones_linea_tuplas[patron]["viajes"],
+                "paradas": list(patron)
+            })
+        lista_updates.append(UpdateOne({"_id": linea_key}, {"$set": {"patrones": patrones}}))
+    if (len(lista_updates) > 0):
+        colleccion_lineas.bulk_write(lista_updates)
+
+
     # Linea.paradas
     lista_updates = []
     for linea_key in linea_paradas.keys():
