@@ -31,7 +31,7 @@ def conectar() -> MongoClient:
     return cliente
 
 
-def generar(gtfs, db_paradas: Collection[_DocumentType], db_lineas: Collection[_DocumentType], db_agencias: Collection[_DocumentType]):
+def generar(gtfs, db_paradas: Collection[_DocumentType], db_lineas: Collection[_DocumentType], db_agencias: Collection[_DocumentType], db_viajes: Collection[_DocumentType] = None):
     geojson = {
         "type": "FeatureCollection",
         "bbox": [],
@@ -99,10 +99,12 @@ def generar(gtfs, db_paradas: Collection[_DocumentType], db_lineas: Collection[_
 
     # Comprobar si existe shapes.txt
     lineas_bbox = {} # idLinea: [minLon, minLat, maxLon, maxLat]
+    viajes_bbox = {} # idViaje: [minLon, minLat, maxLon, maxLat]
+
+    trip_list = csv_to_list(os.path.join(directorio_gtfs, gtfs["idFeed"], "trips.txt"))
     if os.path.isfile(os.path.join(directorio_gtfs, gtfs["idFeed"], "shapes.txt")):
         # Transformar routes.txt, trips.txt y shapes.txt a un diccionario
         route_list = csv_to_list(os.path.join(directorio_gtfs, gtfs["idFeed"], "routes.txt"))
-        trip_list = csv_to_list(os.path.join(directorio_gtfs, gtfs["idFeed"], "trips.txt"))
         shape_list = sorted(csv_to_list(os.path.join(directorio_gtfs, gtfs["idFeed"], "shapes.txt")), key=lambda k: int(k['shape_pt_sequence']))
         agency_list = csv_to_dict(os.path.join(directorio_gtfs, gtfs["idFeed"], "agency.txt"), ["agency_id"])
         shape_dict = {}
@@ -198,6 +200,20 @@ def generar(gtfs, db_paradas: Collection[_DocumentType], db_lineas: Collection[_
                 }
 
                 geojson["features"].append(feature)
+
+            # Actualizar BBOX de los viajes
+            for viaje in [t for t in trip_list if t.get("shape_id") == shape_id]:
+                if viaje["trip_id"] not in viajes_bbox.keys():
+                    viajes_bbox[viaje["trip_id"]] = [shapes_bbox[shape_id][0], shapes_bbox[shape_id][1], shapes_bbox[shape_id][2], shapes_bbox[shape_id][3]]
+                else:
+                    if shapes_bbox[shape_id][0] < viajes_bbox[viaje["trip_id"]][0]:
+                        viajes_bbox[viaje["trip_id"]][0] = shapes_bbox[shape_id][0]
+                    elif shapes_bbox[shape_id][2] > viajes_bbox[viaje["trip_id"]][2]:
+                        viajes_bbox[viaje["trip_id"]][2] = shapes_bbox[shape_id][2]
+                    if shapes_bbox[shape_id][1] < viajes_bbox[viaje["trip_id"]][1]:
+                        viajes_bbox[viaje["trip_id"]][1] = shapes_bbox[shape_id][1]
+                    elif shapes_bbox[shape_id][3] > viajes_bbox[viaje["trip_id"]][3]:
+                        viajes_bbox[viaje["trip_id"]][3] = shapes_bbox[shape_id][3]
     
     # Establecer BBOX de las lineas (por recorrido o paradas)
     lista_lineas = csv_to_list(os.path.join(directorio_gtfs, gtfs["idFeed"], "routes.txt"))
@@ -252,14 +268,71 @@ def generar(gtfs, db_paradas: Collection[_DocumentType], db_lineas: Collection[_
                     bbox[3] = parada["posicionLatitud"]
             
             lista_update.append(UpdateOne({"_id": linea["route_id"]}, {"$set": {"bbox": bbox}}))
+    if len(lista_update) > 0:
+        db_lineas.bulk_write(lista_update)
 
-    db_lineas.bulk_write(lista_update)
+
+    # Establecer BBOX de los viajes
+    lista_update = []
+    for viaje in trip_list:
+        if viaje["trip_id"] in viajes_bbox.keys():
+            lista_update.append(UpdateOne({"_id": viaje["trip_id"]}, {"$set": {"bbox": viajes_bbox[viaje["trip_id"]]}}))
+        else:
+            # Paradas de viaje
+            paradas = db_viajes.aggregate([
+                {
+                    '$match': {
+                        '_id': viaje["trip_id"]
+                    }
+                }, 
+                {
+                    '$lookup': {
+                        'from': 'paradas', 
+                        'localField': 'paradas', 
+                        'foreignField': '_id', 
+                        'as': 'paradas'
+                    }
+                }, 
+                {
+                    '$project': {
+                        'paradas': {
+                            'posicionLatitud': 1, 
+                            'posicionLongitud': 1
+                        }
+                    }
+                }, 
+                {
+                    '$unwind': '$paradas'
+                }, 
+                {
+                    '$replaceRoot': {
+                        'newRoot': '$paradas'
+                    }
+                }
+            ])
+
+            bbox = [180, 90, -180, -90]
+            for parada in paradas:
+                if parada["posicionLongitud"] < bbox[0]:
+                    bbox[0] = parada["posicionLongitud"]
+                elif parada["posicionLongitud"] > bbox[2]:
+                    bbox[2] = parada["posicionLongitud"]
+                if parada["posicionLatitud"] < bbox[1]:
+                    bbox[1] = parada["posicionLatitud"]
+                elif parada["posicionLatitud"] > bbox[3]:
+                    bbox[3] = parada["posicionLatitud"]
+            
+            lista_update.append(UpdateOne({"_id": viaje["trip_id"]}, {"$set": {"bbox": bbox}}))
+    if len(lista_update) > 0:
+        db_viajes.bulk_write(lista_update)
+        
 
     # Guardar BBOX de agencias
     lista_update = []
     for agencia in agencias_bbox.keys():
         lista_update.append(UpdateOne({"_id": agencia}, {"$set": {"bbox": agencias_bbox[agencia]}}))
-    db_agencias.bulk_write(lista_update)
+    if len(lista_update) > 0:
+        db_agencias.bulk_write(lista_update)
     
     # Guardar bbox final
     geojson["bbox"] = bbox
@@ -315,7 +388,7 @@ def main():
             pass
 
     for feed in db["feeds"].find({"actualizar.tiles": True}):
-        generar(feed, db["paradas"], db["lineas"], db["agencias"])
+        generar(feed, db["paradas"], db["lineas"], db["agencias"], db["viajes"])
         db["feeds"].update_many({"idFeed": feed["idFeed"]}, {"$set": {"actualizar.tiles": False}})
 
 
