@@ -191,6 +191,7 @@ def generar(gtfs, db_paradas: Collection[_DocumentType], db_lineas: Collection[_
                         "nombreAgencia": agency_list[route["agency_id"]]["agency_name"],
                         "nombreLargo": route.get("route_long_name"),
                         "nombreCorto": route.get("route_short_name"),
+                        "orden": route.get("route_sort_order") if route.get("route_sort_order", "") != "" else "0",
                         "tipo": route["route_type"],
                         "color": route.get("route_color") if route.get("route_color", "").startswith('#') else "#"+route.get("route_color", ""),
                         "colorTexto": route.get("route_text_color") if route.get("route_text_color", "").startswith('#') else "#"+route.get("route_text_color", ""),
