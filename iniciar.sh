@@ -1,15 +1,9 @@
 #!/bin/sh
-# Instalar PIP
-sudo apt install python3-pip -y
-
-# Instalar requirements.txt
-sudo pip3 install -r ./requirements.txt -r ./api/requirements.txt
-
 # Establecer variables de entorno
 source ./mongodb/mongodb.env
 
 # Iniciar servidor
-docker compose up -d
+docker compose up -d --build
 
 # Descargar datos GTFS
 python3 ./obtener_gtfs.py
