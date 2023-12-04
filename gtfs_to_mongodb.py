@@ -270,7 +270,6 @@ def guardar(gtfs, db: Database[_DocumentType]):
                     }
                 else:
                     tmp["viajes"].append(viaje)
-                    tmp["primerServicio"] = min(tmp["primerServicio"], horario[0].get("arrival_time", ""))
         patrones = []
         for patron in patrones_linea_tuplas.keys():
             patrones.append({
@@ -447,24 +446,24 @@ def guardar(gtfs, db: Database[_DocumentType]):
         
         lista_servicios[item["service_id"]] = fechas_servicio
 
-    # for item in lista_fechas_calendario:
-    #     if not item["service_id"] in lista_servicios.keys():
-    #         lista_servicios[item["service_id"]] = []
+    for item in lista_fechas_calendario:
+        if not item["service_id"] in lista_servicios.keys():
+            lista_servicios[item["service_id"]] = []
         
-    #     fecha = datetime.strptime(item["date"], "%Y%m%d")
-    #     if fecha_actual <= fecha:
-    #         if item["exception_type"] == "1":
-    #             lista_servicios[item["service_id"]].append(fecha)
-    #         elif item["exception_type"] == "2":
-    #             try:
-    #                 lista_servicios[item["service_id"]].remove(fecha)
-    #             except ValueError:
-    #                 pass
+        fecha = datetime.strptime(item["date"], "%Y%m%d")
+        if fecha_actual <= fecha:
+            if item["exception_type"] == "1":
+                lista_servicios[item["service_id"]].append(fecha)
+            elif item["exception_type"] == "2":
+                try:
+                    lista_servicios[item["service_id"]].remove(fecha)
+                except ValueError:
+                    pass
 
-    # # Eliminar posibles fechas repetidas
-    # for item in lista_servicios.keys():
-    #     lista_servicios[item] = list(set(lista_servicios[item]))
-    #     lista_servicios[item].sort()
+    # Eliminar posibles fechas repetidas
+    for item in lista_servicios.keys():
+        lista_servicios[item] = list(set(lista_servicios[item]))
+        lista_servicios[item].sort()
 
     # # Obtener todas las fechas
     # fechas_servicios = []
@@ -530,7 +529,7 @@ def guardar(gtfs, db: Database[_DocumentType]):
                 "email": none_si_vacio(info.get("feed_contact_email", "")),
                 "urlContacto": none_si_vacio(info.get("feed_contact_url", ""))
             }
-            lista_updates.append(UpdateOne({"idFeed": gtfs["idFeed"]}, {"$set": {"info": doc}}))
+            lista_updates.append(UpdateOne({"_id": gtfs["idFeed"]}, {"$set": {"info": doc}}))
 
     ## Feed.atribuciones
     if (os.path.exists(os.path.join(directorio_gtfs, gtfs["idFeed"], "attributions.txt"))):
@@ -543,16 +542,16 @@ def guardar(gtfs, db: Database[_DocumentType]):
                 "idAgencia": none_si_vacio(atribucion.get("agency_id", "")),
                 "idLinea": none_si_vacio(atribucion.get("route_id", "")),
                 "idViaje": none_si_vacio(atribucion.get("trip_id", "")),
-                "nombreOrganizacion": none_si_vacio(atribucion.get("agency_name", "")),
+                "nombreOrganizacion": none_si_vacio(atribucion.get("organization_name", "")),
                 "esProductor": atribucion.get("is_producer", "0") == "1" or atribucion.get("is_producer", "") != "",
                 "esOperador": atribucion.get("is_operator", "0") == "1" or atribucion.get("is_operator", "") != "",
                 "esAutoridad": atribucion.get("is_authority", "0") == "1" or atribucion.get("is_authority", "") != "",
-                "url": none_si_vacio(atribucion.get("agency_url", "")),
-                "email": none_si_vacio(atribucion.get("agency_email", "")),
-                "telefono": none_si_vacio(atribucion.get("agency_phone", ""))
+                "url": none_si_vacio(atribucion.get("attribution_url", "")),
+                "email": none_si_vacio(atribucion.get("attribution_email", "")),
+                "telefono": none_si_vacio(atribucion.get("attribution_phone", ""))
             })
 
-        lista_updates.append(UpdateOne({"idFeed": gtfs["idFeed"]}, {"$set": {"atribuciones": doc}}))
+        lista_updates.append(UpdateOne({"_id": gtfs["idFeed"]}, {"$set": {"atribuciones": atribuciones}}))
     
     if len(lista_updates) > 0:
         colleccion_feed.bulk_write(lista_updates)
