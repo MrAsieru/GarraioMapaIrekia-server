@@ -1,3 +1,4 @@
+from datetime import datetime
 from pathlib import Path
 import urllib.request
 import zipfile
@@ -228,7 +229,7 @@ def generar(gtfs, db_paradas: Collection[_DocumentType], db_lineas: Collection[_
             paradas = db_lineas.aggregate([
                 {
                     '$match': {
-                        'idLinea': linea["route_id"]
+                        '_id': linea["route_id"]
                     }
                 }, 
                 {
@@ -364,6 +365,7 @@ def csv_to_dict(archivo, primary_key: list) -> dict:
 def main():
     global config, directorio_gtfs, directorio_geojson
     load_dotenv(dotenv_path=Path('./mongodb/mongodb.env'))
+    start = datetime.now()
     with open('config.json') as f:
         config = json.load(f)
 
@@ -387,10 +389,13 @@ def main():
             os.remove(os.path.join(directorio_geojson, feed_id+".geojson"))
         except FileNotFoundError:
             pass
-
-    for feed in db["feeds"].find({"actualizar.tiles": True}):
-        generar(feed, db["paradas"], db["lineas"], db["agencias"], db["viajes"])
-        db["feeds"].update_many({"idFeed": feed["idFeed"]}, {"$set": {"actualizar.tiles": False}})
+    
+    try:
+        for feed in db["feeds"].find({"actualizar.tiles": True}):
+            generar(feed, db["paradas"], db["lineas"], db["agencias"], db["viajes"])
+            db["feeds"].update_many({"idFeed": feed["idFeed"]}, {"$set": {"actualizar.tiles": False}})
+    finally:
+        print(f"Acabado en {(datetime.now()-start).total_seconds()}s")
 
 
 if __name__ == '__main__':

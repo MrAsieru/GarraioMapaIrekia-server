@@ -2,6 +2,7 @@ import hashlib
 from pathlib import Path
 import re
 from typing import List
+from pymongo import UpdateOne
 import requests
 import zipfile
 import os
@@ -32,14 +33,24 @@ class MetodoDescarga:
     def descarga(self) -> (bool, bool):
         pass
 
-    def guardar(self, contenido: bytes, info_db: dict):
+    def guardar(self, contenido: bytes, info_db: dict, info_fuente: dict = None):
         with open(self.archivo_zip, 'wb') as f:
             f.write(contenido)
 
         # Almacenar datos en la base de datos
         info_base = {"actualizar": {"db": True, "tiles": True, "posiciones": True}}
         info_base.update(info_db)
-        self.db_feeds.update_one({"_id": self.feed["idFeed"]}, {"$set": info_base})
+        lista_update = []
+        lista_update.append(UpdateOne({"_id": self.feed["idFeed"]}, {"$set": info_base}))
+        
+        # Actualizar información de la fuente
+        if info_fuente != None:
+            for atr in info_fuente.keys():
+                lista_update.append(UpdateOne(
+                    {"_id": self.feed["idFeed"], "fuentes": {"$elemMatch": {"url": self.fuente.get("url", None), "conjuntoDatoId": self.fuente.get("conjuntoDatoId", None)}}},
+                    {"$set": {f"fuentes.$.{atr}": info_fuente[atr]}}
+                ))
+        self.db_feeds.bulk_write(lista_update)
 
 
 class MetodoDescargaHTTP(MetodoDescarga):
@@ -78,7 +89,7 @@ class MetodoDescargaETAG(MetodoDescarga):
             encabezado = requests.request("HEAD", self.fuente["url"])
             if (encabezado.status_code == 200):
                 # Comprobar si el valor etag ha cambiado
-                if (encabezado.headers.get("etag") != self.feed.get("etag", "")):
+                if (encabezado.headers.get("etag") != self.fuente.get("etag", "")):
                     # Si ha cambiado, descargar el archivo
                     respuesta = requests.request("GET", self.fuente["url"])
 
@@ -86,7 +97,7 @@ class MetodoDescargaETAG(MetodoDescarga):
                         # Comprobar MD5
                         md5 = hashlib.md5(respuesta.content).hexdigest()
                         if (md5 != self.feed.get("MD5", "")):
-                            super().guardar(respuesta.content, {"etag": encabezado.headers.get("etag"), "MD5": md5})
+                            super().guardar(respuesta.content, {"MD5": md5}, {"etag": encabezado.headers.get("etag")})
                             error = False
                             actualizar = True
                         else:
@@ -115,7 +126,7 @@ class MetodoDescargaNAPMITMA(MetodoDescarga):
                 # Comprobar si el conjunto de datos es correcto 
                 if (conjunto_correcto(info_conjunto)):
                     # Comprobar si la fecha de actualización ha cambiado
-                    if (info_conjunto.get('ficherosDto', [{}])[0].get('fechaActualizacion', "") != self.feed.get("fechaActualizacion", "")):
+                    if (info_conjunto.get('ficherosDto', [{}])[0].get('fechaActualizacion', "") != self.fuente.get("fechaActualizacion", "")):
                         # Descargar fichero
                         url_descarga = f"https://nap.mitma.es/api/Fichero/download/{info_conjunto.get('ficherosDto', [{}])[0].get('ficheroId')}"
                         fichero = requests.request("GET", url_descarga, headers=headers)
@@ -123,7 +134,7 @@ class MetodoDescargaNAPMITMA(MetodoDescarga):
                             # Comprobar MD5
                             md5 = hashlib.md5(fichero.content).hexdigest()
                             if (md5 != self.feed.get("MD5", "")):
-                                super().guardar(fichero.content, {"fechaActualizacion": info_conjunto.get('ficherosDto', [{}])[0].get('fechaActualizacion'), "MD5": md5})
+                                super().guardar(fichero.content, {"MD5": md5}, {"fechaActualizacion": info_conjunto.get('ficherosDto', [{}])[0].get('fechaActualizacion')})
                                 error = False
                                 actualizar = True
                             else:
@@ -159,7 +170,17 @@ def sincronizar_feeds(colleccion_feeds: Collection[_DocumentType], file_feeds: L
 
     # Actualizar fuentes de feeds existentes en la base de datos
     for feed in db_feeds_idFeeds:
-        colleccion_feeds.update_many({"_id": feed}, {"$set": {"fuentes": file_feeds[file_feeds_idFeeds.index(feed)]["fuentes"]}})
+        # Get existing fuentes from DB
+        fuentes_db = colleccion_feeds.find_one({"_id": feed}, {"fuentes": 1})
+        
+        fuentes_nuevas = []
+        for fuente in file_feeds[file_feeds_idFeeds.index(feed)]["fuentes"]:
+            if len(tmp := list(filter(lambda x: x.get("url", 0) == fuente.get("url", 1) or x.get("conjuntoDatoId", 0) == fuente.get("conjuntoDatoId", 1), fuentes_db["fuentes"]))) > 0:
+                fuentes_nuevas.append(tmp[0])
+            else:
+                fuentes_nuevas.append(fuente)
+
+        colleccion_feeds.update_many({"_id": feed}, {"$set": {"fuentes": fuentes_nuevas}})
 
     # Añadir feeds que no existen en la base de datos
     if len(feeds_nuevos) > 0:
@@ -174,18 +195,21 @@ def descargar(feed: dict, config: dict, db_feeds: Collection[_DocumentType]) -> 
     print(feed["idFeed"])
     for fuente in feed["fuentes"]:
         descarga: MetodoDescarga = None
-        if (fuente["type"] == "HTTP"):
+        if (fuente["tipo"] == "HTTP"):
             descarga = MetodoDescargaHTTP(feed, fuente, db_feeds, archivo_zip)            
-        elif (fuente["type"] == "ETAG"):
+        elif (fuente["tipo"] == "ETAG"):
             descarga = MetodoDescargaETAG(feed, fuente, db_feeds, archivo_zip)            
-        elif (fuente["type"] == "NAP_MITMA"):
+        elif (fuente["tipo"] == "NAP_MITMA"):
             descarga = MetodoDescargaNAPMITMA(feed, fuente, db_feeds, archivo_zip)
         else:
             continue
 
         error, actualizar = descarga.descarga()
         if not error:
-            print("\tDescarga correcta")
+            if actualizar:
+                print("\tDescarga correcta")
+            else:
+                print("\tSin cambios")
             break
         else:
             print("\tDescarga incorrecta")
@@ -263,7 +287,7 @@ def main():
     start = datetime.now()
 
     # Cargar configuración de MongoDB
-    load_dotenv(dotenv_path=Path('./mongodb/mongodb.env'))
+    # load_dotenv(dotenv_path=Path('./mongodb/mongodb.env'))
     with open('config.json') as f:
         config = json.load(f)
 
