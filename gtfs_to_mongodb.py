@@ -543,9 +543,9 @@ def guardar(gtfs, db: Database[_DocumentType]):
                 "idLinea": none_si_vacio(atribucion.get("route_id", "")),
                 "idViaje": none_si_vacio(atribucion.get("trip_id", "")),
                 "nombreOrganizacion": none_si_vacio(atribucion.get("organization_name", "")),
-                "esProductor": atribucion.get("is_producer", "0") == "1" or atribucion.get("is_producer", "") != "",
-                "esOperador": atribucion.get("is_operator", "0") == "1" or atribucion.get("is_operator", "") != "",
-                "esAutoridad": atribucion.get("is_authority", "0") == "1" or atribucion.get("is_authority", "") != "",
+                "esProductor": atribucion.get("is_producer", "0") == "1",
+                "esOperador": atribucion.get("is_operator", "0") == "1",
+                "esAutoridad": atribucion.get("is_authority", "0") == "1",
                 "url": none_si_vacio(atribucion.get("attribution_url", "")),
                 "email": none_si_vacio(atribucion.get("attribution_email", "")),
                 "telefono": none_si_vacio(atribucion.get("attribution_phone", ""))
