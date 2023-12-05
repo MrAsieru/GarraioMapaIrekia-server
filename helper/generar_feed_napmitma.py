@@ -31,7 +31,7 @@ def conseguir_feeds_de_provincias(provincias: List[int], config: dict) -> List[d
     if (response.status_code == 200):
         response = response.json()
         for feed_nap in response.get("conjuntosDatoDto", []):
-            feed.append({"id": feed_nap.get("nombre", ""), "fuentes": [{"type": "NAP_MITMA", "conjuntoDatoId": feed_nap.get("conjuntoDatoId", "")}]})
+            feed.append({"id": feed_nap.get("nombre", ""), "fuentes": [{"tipo": "NAP_MITMA", "conjuntoDatoId": feed_nap.get("conjuntoDatoId", "")}]})
 
     return feed
 

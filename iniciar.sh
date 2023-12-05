@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # Establecer variables de entorno
 source ./mongodb/mongodb.env
 
