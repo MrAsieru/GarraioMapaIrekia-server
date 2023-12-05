@@ -92,6 +92,7 @@ def calcular(gtfs: dict, db: Database[_DocumentType]):
                         yield {
                             "idLinea": lista_viajes[viaje]["route_id"],
                             "idViaje": viaje,
+                            "tipo": lista_lineas[lista_viajes[viaje]["route_id"]]["route_type"],
                             "posiciones": viajes[viaje]
                         }
                 # Crear documentos
@@ -169,8 +170,7 @@ def posiciones_de_viaje(recorrido: List[dict], horario: List[dict], paradas: Lis
             posiciones.append({
                 "lat": punto.y,
                 "lon": punto.x,
-                "fecha": hora_salida + timedelta(seconds=j),
-                "proximoOrdenParada": horario[i]["stop_sequence"]
+                "fecha": hora_salida + timedelta(seconds=j)
             })
             j += 1
 
@@ -203,8 +203,8 @@ def posiciones_de_viaje(recorrido: List[dict], horario: List[dict], paradas: Lis
 
 def codificar_posiciones(fechas_posiciones: dict) -> dict:
     # Codificar valores
-    # Formato: lat|lon|proximoOrdenParada~lat|lon|proximoOrdenParada~...
-    # ~: separa posiciones, |: separa lat, lon y proximoOrdenParada, @: datos vacios
+    # Formato: lat|lon~lat|lon~...
+    # ~: separa posiciones, |: separa lat y lon, @: datos vacios
     posiciones_codificadas = {}
     for fecha in fechas_posiciones.keys():
         datos = ""
@@ -218,7 +218,7 @@ def codificar_posiciones(fechas_posiciones: dict) -> dict:
             else:
                 dif_lat = int(round(fechas_posiciones[fecha][i]["lat"] - fechas_posiciones[fecha][i-1]["lat"], PRECISION_COORDENADAS) * (10 ** PRECISION_COORDENADAS))
                 dif_lon = int(round(fechas_posiciones[fecha][i]["lon"] - fechas_posiciones[fecha][i-1]["lon"], PRECISION_COORDENADAS) * (10 ** PRECISION_COORDENADAS))
-                datos += str(dif_lat) + "|" + str(dif_lon) + "|" + fechas_posiciones[fecha][i].get("proximoOrdenParada", "")
+                datos += str(dif_lat) + "|" + str(dif_lon)
 
             if i < len(fechas_posiciones[fecha]) - 1:
                 datos += "~"
@@ -241,8 +241,7 @@ def posiciones_en_parada(horario_parada: dict, lista_paradas: List[dict], tramo:
         posiciones.append({
             "lat": posicion_parada.y,
             "lon": posicion_parada.x,
-            "fecha": hora_llegada + timedelta(seconds=j),
-            "proximoOrdenParada": horario_parada["stop_sequence"]
+            "fecha": hora_llegada + timedelta(seconds=j)
         })
     
     return posiciones
