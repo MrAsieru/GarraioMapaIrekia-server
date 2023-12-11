@@ -8,8 +8,12 @@ services:
       - 443:443
       - 27017:27017 # Para poder acceder a mongodb mientras se desarrolla
     volumes:
-      - ${HOME}/nginx/nginx.conf:/etc/nginx/nginx.conf
-      # - ${HOME}/ssl:/ssl/
+      # Sin SSL
+      # - ./nginx/nginx.conf:/etc/nginx/nginx-.conf
+      
+      # Con SSL
+      - ./nginx/nginx.conf:/etc/nginx/nginx-ssl.conf
+      - ./ssl:/etc/ssl:ro
     depends_on:
       - martin
       - api
@@ -37,7 +41,7 @@ services:
     env_file: mongodb/mongodb.env
     volumes:
       - mongodatabase:/data/db
-      - ${HOME}/mongodb/init-mongo.sh:/docker-entrypoint-initdb.d/init-mongo.sh:ro
+      - ./mongodb/init-mongo.sh:/docker-entrypoint-initdb.d/init-mongo.sh:ro
     networks:
       - network
   api:
@@ -56,11 +60,12 @@ services:
     ports:
       - "8080"
     volumes:
-      - ${HOME}/web/nginx.conf:/etc/nginx/nginx.conf
+      - ./web/nginx.conf:/etc/nginx/nginx.conf
     networks:
       - network
 volumes:
   mongodatabase:
+    name: mongodatabase
 networks:
   network:
     driver: bridge
