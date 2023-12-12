@@ -124,6 +124,7 @@ def guardar(gtfs, db: Database[_DocumentType]):
             "idParada": parada.get("stop_id"),
             "codigo": none_si_vacio(parada.get("stop_code", "")),
             "nombre": none_si_vacio(parada.get("stop_name", "")),
+            "nombreTts": none_si_vacio(parada.get("tts_stop_name", "")),
             "descripcion": none_si_vacio(parada.get("stop_desc", "")),
             "posicionLatitud": round(float(parada.get("stop_lat")), 5) if parada.get("stop_lat", "") != "" else None,
             "posicionLongitud": round(float(parada.get("stop_lon")), 5) if parada.get("stop_lon", "") != "" else None,
@@ -151,13 +152,13 @@ def guardar(gtfs, db: Database[_DocumentType]):
     colleccion_paradas.insert_many(lista_documentos)
     #endregion
 
-    #region Parada.paradasHijas
-    lista_updates = []
-    for parada_key in paradas_padre.keys():
-        lista_updates.append(UpdateOne({"_id": parada_key}, {"$set": {"paradasHijas": paradas_padre[parada_key]}}))
-    if len(lista_updates) > 0:
-        colleccion_paradas.bulk_write(lista_updates)
-    #endregion
+    # #region Parada.paradasHijas
+    # lista_updates = []
+    # for parada_key in paradas_padre.keys():
+    #     lista_updates.append(UpdateOne({"_id": parada_key}, {"$set": {"paradasHijas": paradas_padre[parada_key]}}))
+    # if len(lista_updates) > 0:
+    #     colleccion_paradas.bulk_write(lista_updates)
+    # #endregion
 
     #region Viaje
     lista_viajes = csv_to_dict(os.path.join(directorio_gtfs, gtfs["idFeed"], "trips.txt"), ["trip_id"])
@@ -253,10 +254,9 @@ def guardar(gtfs, db: Database[_DocumentType]):
     # Linea.patrones
     lista_updates = []
     for linea_key in linea_viajes.keys():
-        patrones_linea_tuplas = {} # Patron: {de: idParada, a: idParada, idDireccion: number}
+        patrones_linea_tuplas = {} # Patron: {de: idParada, a: idParada, direccion: number}
         for viaje in linea_viajes[linea_key]:
             horario = sorted(lista_horarios.get(viaje) or [], key=lambda x: int(x["stop_sequence"]))
-            viaje_objeto = lista_viajes.get(viaje)
             secuencia_paradas = tuple([item["stop_id"] for item in horario])
             if (len(secuencia_paradas) > 0):
                 tmp = patrones_linea_tuplas.get(secuencia_paradas, None)
@@ -264,20 +264,20 @@ def guardar(gtfs, db: Database[_DocumentType]):
                     patrones_linea_tuplas[secuencia_paradas] = {
                         "de": lista_paradas[secuencia_paradas[0]].get("stop_name", ""),
                         "a": lista_paradas[secuencia_paradas[-1]].get("stop_name", ""),
-                        "idDireccion": none_si_vacio(lista_viajes[viaje].get("direction_id", "")),
+                        "direccion": none_si_vacio(lista_viajes[viaje].get("direction_id", "")),
                         "letrero": none_si_vacio(lista_viajes[viaje].get("trip_headsign", "")),
-                        "viajes": [viaje]
+                        "numViajes": 1
                     }
                 else:
-                    tmp["viajes"].append(viaje)
+                    tmp["numViajes"] += 1
         patrones = []
         for patron in patrones_linea_tuplas.keys():
             patrones.append({
                 "de": patrones_linea_tuplas[patron]["de"],
                 "a": patrones_linea_tuplas[patron]["a"],
-                "idDireccion": patrones_linea_tuplas[patron]["idDireccion"],
+                "direccion": patrones_linea_tuplas[patron]["direccion"],
                 "letrero": patrones_linea_tuplas[patron]["letrero"],
-                "viajes": patrones_linea_tuplas[patron]["viajes"],
+                "numViajes": patrones_linea_tuplas[patron]["numViajes"],
                 "paradas": list(patron)
             })
         lista_updates.append(UpdateOne({"_id": linea_key}, {"$set": {"patrones": patrones}}))
@@ -315,67 +315,67 @@ def guardar(gtfs, db: Database[_DocumentType]):
         colleccion_paradas.bulk_write(lista_updates)
     #endregion
 
-    #region Area
-    if (os.path.exists(os.path.join(directorio_gtfs, gtfs["idFeed"], "areas.txt")) and os.path.exists(os.path.join(directorio_gtfs, gtfs["idFeed"], "area_stops.txt"))):
-        lista_areas = csv_to_list(os.path.join(directorio_gtfs, gtfs["idFeed"], "areas.txt"))
-        lista_paradas_area = csv_to_listdict(os.path.join(directorio_gtfs, gtfs["idFeed"], "area_stops.txt"), ["area_id"])
-        colleccion_areas = db["areas"]
+    # #region Area
+    # if (os.path.exists(os.path.join(directorio_gtfs, gtfs["idFeed"], "areas.txt")) and os.path.exists(os.path.join(directorio_gtfs, gtfs["idFeed"], "area_stops.txt"))):
+    #     lista_areas = csv_to_list(os.path.join(directorio_gtfs, gtfs["idFeed"], "areas.txt"))
+    #     lista_paradas_area = csv_to_listdict(os.path.join(directorio_gtfs, gtfs["idFeed"], "area_stops.txt"), ["area_id"])
+    #     colleccion_areas = db["areas"]
 
-        lista_documentos = []
-        parada_areas = {}
-        for area in lista_areas:
-            paradas = []
-            for item in lista_paradas_area.get(area["area_id"]):
-                paradas.append(item["stop_id"])
+    #     lista_documentos = []
+    #     parada_areas = {}
+    #     for area in lista_areas:
+    #         paradas = []
+    #         for item in lista_paradas_area.get(area["area_id"]):
+    #             paradas.append(item["stop_id"])
 
-                # Parada.areas
-                if not item["stop_id"] in parada_areas.keys():
-                    parada_areas[item["stop_id"]] = []
-                parada_areas[item["stop_id"]].append(area["area_id"])
+    #             # Parada.areas
+    #             if not item["stop_id"] in parada_areas.keys():
+    #                 parada_areas[item["stop_id"]] = []
+    #             parada_areas[item["stop_id"]].append(area["area_id"])
 
-            lista_documentos.append({
-                "_id": area.get("area_id"),
-                "idArea": area.get("area_id"),
-                "nombre": none_si_vacio(area.get("area_name", "")),
-                "paradas": paradas
-            })
+    #         lista_documentos.append({
+    #             "_id": area.get("area_id"),
+    #             "idArea": area.get("area_id"),
+    #             "nombre": none_si_vacio(area.get("area_name", "")),
+    #             "paradas": paradas
+    #         })
 
-        colleccion_areas.insert_many(lista_documentos)
+    #     colleccion_areas.insert_many(lista_documentos)
 
-        # Parada.areas
-        lista_updates = []
-        for parada_key in parada_areas.keys():
-            lista_updates.append(UpdateOne({"_id": parada_key}, {"$set": {"areas": parada_areas[parada_key]}}))
-        if (len(lista_updates) > 0):
-            colleccion_paradas.bulk_write(lista_updates)
-    #endregion
+    #     # Parada.areas
+    #     lista_updates = []
+    #     for parada_key in parada_areas.keys():
+    #         lista_updates.append(UpdateOne({"_id": parada_key}, {"$set": {"areas": parada_areas[parada_key]}}))
+    #     if (len(lista_updates) > 0):
+    #         colleccion_paradas.bulk_write(lista_updates)
+    # #endregion
 
-    #region Itinerario
-    if (os.path.exists(os.path.join(directorio_gtfs, gtfs["idFeed"], "pathways.txt"))):
-        lista_itinerarios = csv_to_dict(os.path.join(directorio_gtfs, gtfs["idFeed"], "pathways.txt"), ["shape_id"])
-        colleccion_itinerarios = db["itinerarios"]
+    # #region Itinerario
+    # if (os.path.exists(os.path.join(directorio_gtfs, gtfs["idFeed"], "pathways.txt"))):
+    #     lista_itinerarios = csv_to_dict(os.path.join(directorio_gtfs, gtfs["idFeed"], "pathways.txt"), ["shape_id"])
+    #     colleccion_itinerarios = db["itinerarios"]
 
-        lista_documentos = []
-        for itinerario_key in lista_itinerarios.keys():
-            itinerario: dict = lista_itinerarios[itinerario_key]
-            lista_documentos.append({
-                "_id": itinerario.get("pathway_id"),
-                "idItinerario": itinerario.get("pathway_id"),
-                "desdeParada": itinerario["from_stop_id"],
-                "hastaParada": itinerario["to_stop_id"],
-                "modo": int(itinerario.get("pathway_mode")),
-                "bidireccional": itinerario.get("is_bidirectional") == "1",
-                "distancia": float(itinerario.get("length")) if itinerario.get("length", "") != "" else None,
-                "duracion": int(itinerario.get("traversal_time")) if itinerario.get("traversal_time", "") != "" else None,
-                "escalones": int(itinerario.get("stair_count")) if itinerario.get("stair_count", "") != "" else None,
-                "pendienteMax": float(itinerario.get("max_slope") if itinerario.get("max_slope", "") != "" else "0"),
-                "anchuraMin": float(itinerario.get("min_width")) if itinerario.get("min_width", "") != "" else None,
-                "letrero": none_si_vacio(itinerario.get("signposted_as", "")),
-                "letreroReverso": none_si_vacio(itinerario.get("reversed_signposted_as", ""))
-            })
+    #     lista_documentos = []
+    #     for itinerario_key in lista_itinerarios.keys():
+    #         itinerario: dict = lista_itinerarios[itinerario_key]
+    #         lista_documentos.append({
+    #             "_id": itinerario.get("pathway_id"),
+    #             "idItinerario": itinerario.get("pathway_id"),
+    #             "desdeParada": itinerario["from_stop_id"],
+    #             "hastaParada": itinerario["to_stop_id"],
+    #             "modo": int(itinerario.get("pathway_mode")),
+    #             "bidireccional": itinerario.get("is_bidirectional") == "1",
+    #             "distancia": float(itinerario.get("length")) if itinerario.get("length", "") != "" else None,
+    #             "duracion": int(itinerario.get("traversal_time")) if itinerario.get("traversal_time", "") != "" else None,
+    #             "escalones": int(itinerario.get("stair_count")) if itinerario.get("stair_count", "") != "" else None,
+    #             "pendienteMax": float(itinerario.get("max_slope") if itinerario.get("max_slope", "") != "" else "0"),
+    #             "anchuraMin": float(itinerario.get("min_width")) if itinerario.get("min_width", "") != "" else None,
+    #             "letrero": none_si_vacio(itinerario.get("signposted_as", "")),
+    #             "letreroReverso": none_si_vacio(itinerario.get("reversed_signposted_as", ""))
+    #         })
 
-        colleccion_itinerarios.insert_many(lista_documentos)
-    #endregion
+    #     colleccion_itinerarios.insert_many(lista_documentos)
+    # #endregion
 
     #region Recorrido
     # if (os.path.exists(os.path.join(directorio_gtfs, gtfs["idFeed"], "shapes.txt"))):
@@ -556,25 +556,25 @@ def guardar(gtfs, db: Database[_DocumentType]):
     if len(lista_updates) > 0:
         colleccion_feed.bulk_write(lista_updates)
 
-    ## Traduccion
-    if (os.path.exists(os.path.join(directorio_gtfs, gtfs["idFeed"], "translations.txt"))):
-        lista_traducciones = csv_to_list(os.path.join(directorio_gtfs, gtfs["idFeed"], "translations.txt"))
-        colleccion_traducciones = db["traducciones"]
+    # ## Traduccion
+    # if (os.path.exists(os.path.join(directorio_gtfs, gtfs["idFeed"], "translations.txt"))):
+    #     lista_traducciones = csv_to_list(os.path.join(directorio_gtfs, gtfs["idFeed"], "translations.txt"))
+    #     colleccion_traducciones = db["traducciones"]
 
-        lista_documentos = []
-        for traduccion in lista_traducciones:
-            lista_documentos.append({
-                "nombreTabla": traduccion.get("table_name"),
-                "nombreCampo": traduccion.get("field_name"),
-                "idioma": traduccion.get("language"),
-                "traduccion": traduccion.get("translation"),
-                "idElemento": none_si_vacio(traduccion.get("record_id", "")),
-                "idElemento2": none_si_vacio(traduccion.get("record_sub_id", "")),
-                "valorOriginal": none_si_vacio(traduccion.get("field_value", ""))
-            })
-        colleccion_traducciones.insert_many(lista_documentos)
+    #     lista_documentos = []
+    #     for traduccion in lista_traducciones:
+    #         lista_documentos.append({
+    #             "nombreTabla": traduccion.get("table_name"),
+    #             "nombreCampo": traduccion.get("field_name"),
+    #             "idioma": traduccion.get("language"),
+    #             "traduccion": traduccion.get("translation"),
+    #             "idElemento": none_si_vacio(traduccion.get("record_id", "")),
+    #             "idElemento2": none_si_vacio(traduccion.get("record_sub_id", "")),
+    #             "valorOriginal": none_si_vacio(traduccion.get("field_value", ""))
+    #         })
+    #     colleccion_traducciones.insert_many(lista_documentos)
 
-    db["feeds"].update_one({"_id": gtfs["idFeed"]}, {"$set": {"actualizar.db": False}})
+    # db["feeds"].update_one({"_id": gtfs["idFeed"]}, {"$set": {"actualizar.db": False}})
 
 
 def csv_to_dict(archivo, primary_key: list) -> dict:

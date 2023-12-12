@@ -66,8 +66,8 @@ class MetodoDescargaHTTP(MetodoDescarga):
             if (respuesta.status_code == 200):
                 # Comprobar MD5
                 md5 = hashlib.md5(respuesta.content).hexdigest()
-                if (md5 != self.feed.get("MD5", "")):
-                    super().guardar(respuesta.content, {"MD5": md5})
+                if (md5 != self.feed.get("md5", "")):
+                    super().guardar(respuesta.content, {"md5": md5})
                     error = False
                     actualizar = True
                 else:
@@ -96,8 +96,8 @@ class MetodoDescargaETAG(MetodoDescarga):
                     if (respuesta.status_code == 200):
                         # Comprobar MD5
                         md5 = hashlib.md5(respuesta.content).hexdigest()
-                        if (md5 != self.feed.get("MD5", "")):
-                            super().guardar(respuesta.content, {"MD5": md5}, {"etag": encabezado.headers.get("etag")})
+                        if (md5 != self.feed.get("md5", "")):
+                            super().guardar(respuesta.content, {"md5": md5}, {"etag": encabezado.headers.get("etag")})
                             error = False
                             actualizar = True
                         else:
@@ -133,8 +133,8 @@ class MetodoDescargaNAPMITMA(MetodoDescarga):
                         if (fichero.status_code == 200):
                             # Comprobar MD5
                             md5 = hashlib.md5(fichero.content).hexdigest()
-                            if (md5 != self.feed.get("MD5", "")):
-                                super().guardar(fichero.content, {"MD5": md5}, {"fechaActualizacion": info_conjunto.get('ficherosDto', [{}])[0].get('fechaActualizacion')})
+                            if (md5 != self.feed.get("md5", "")):
+                                super().guardar(fichero.content, {"md5": md5}, {"fechaActualizacion": info_conjunto.get('ficherosDto', [{}])[0].get('fechaActualizacion')})
                                 error = False
                                 actualizar = True
                             else:
