@@ -119,7 +119,7 @@ class MetodoDescargaNAPMITMA(MetodoDescarga):
         try:
             # Obtener información del conjunto de datos
             url_info = f"https://nap.mitma.es/api/Fichero/{self.fuente['conjuntoDatoId']}"
-            headers = {"ApiKey": config.get("nap_mitma_api_key"), "Accept": "application/json"}
+            headers = {"ApiKey": config.get("napMitmaApiKey"), "Accept": "application/json"}
             info_conjunto = requests.request("GET", url_info, headers=headers)
             if (info_conjunto.status_code == 200):
                 info_conjunto = info_conjunto.json()
@@ -292,8 +292,8 @@ def main():
         config = json.load(f)
 
     # Obtener y generar directorios
-    directorio_zip = os.path.join(os.getcwd(), config["directorio_zip"])
-    directorio_gtfs = os.path.join(os.getcwd(), config["directorio_gtfs"])
+    directorio_zip = os.path.join(os.getcwd(), config["directorioZip"])
+    directorio_gtfs = os.path.join(os.getcwd(), config["directorioGTFS"])
 
     try:
         os.mkdir(directorio_zip)

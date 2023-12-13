@@ -369,8 +369,8 @@ def main():
     with open('config.json') as f:
         config = json.load(f)
 
-    directorio_gtfs = os.path.join(os.getcwd(), config["directorio_gtfs"])
-    directorio_geojson = os.path.join(os.getcwd(), config["directorio_geojson"])
+    directorio_gtfs = os.path.join(os.getcwd(), config["directorioGTFS"])
+    directorio_geojson = os.path.join(os.getcwd(), config["directorioGeoJson"])
 
     try:
         os.mkdir(directorio_geojson)

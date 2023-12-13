@@ -27,7 +27,8 @@
 				"atribucion": "Powered by MITMA",
 				"urlAtribucion": "http://www.mitma.es/"
             }
-        ]
+        ],
+        "calcularPosiciones": false
     },
     {
         "idFeed": "AutobusEnCantabria",
@@ -135,7 +136,8 @@
 				"atribucion": "Eusko Jaurlaritza / Gobierno Vasco. geoEuskadi (bajo licencia CC-BY 4.0)",
 				"urlAtribucion": "https://www.geo.euskadi.eus/"
             }
-        ]
+        ],
+        "calcularPosiciones": false
     },
     {
         "idFeed": "Donostiabus",
@@ -588,7 +590,8 @@
 				"atribucion": "Eusko Jaurlaritza / Gobierno Vasco. geoEuskadi (bajo licencia CC-BY 4.0)",
 				"urlAtribucion": "https://www.geo.euskadi.eus/"
             }
-        ]
+        ],
+        "calcularPosiciones": false
     },
     {
         "idFeed": "Sopelbus",

@@ -1,7 +1,8 @@
 {
-    "directorio_zip": "zip",
-    "directorio_gtfs": "gtfs",
-    "directorio_geojson": "geojson",
+    "directorioZip": "zip",
+    "directorioGTFS": "gtfs",
+    "directorioGeoJson": "geojson",
     "feeds": "feeds.json",
-    "nap_mitma_api_key": "ApiKey"
+    "napMitmaApiKey": "ApiKey",
+    "calcularPosiciones": true
 }

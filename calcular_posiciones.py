@@ -17,7 +17,6 @@ import pytz
 
 config = {}
 directorio_gtfs = ""
-directorio_geojson = ""
 
 PRECISION_COORDENADAS = 6 # Precisión de las coordenadas
 
@@ -396,13 +395,17 @@ def csv_to_list(archivo) -> list:
 
 
 def main():
-    global config, directorio_gtfs, directorio_geojson
+    global config, directorio_gtfs
     start = datetime.now()
     load_dotenv(dotenv_path=Path('./mongodb/mongodb.env'))
     with open('config.json') as f:
         config = json.load(f)
 
-    directorio_gtfs = os.path.join(os.getcwd(), config["directorio_gtfs"])
+    if not config.get("calcularPosiciones", True):
+        print("Calcular posiciones desactivado")
+        return
+
+    directorio_gtfs = os.path.join(os.getcwd(), config["directorioGTFS"])
 
     cliente = conectar()
     if not os.environ.get('MONGODB_SERVER_USER') is None:
@@ -417,7 +420,7 @@ def main():
     db["posiciones"].delete_many({"idAgencia": {"$in": ids_agencias}})
 
     try:
-        for feed in db["feeds"].find({"actualizar.posiciones": True}):
+        for feed in db["feeds"].find({'$and': [{'actualizar.posiciones': True}, {'$nor': [{'calcularPosiciones': False}]}]}):
             calcular(feed, db)
     finally:
         print(f"Acabado en {(datetime.now()-start).total_seconds()}s")

@@ -14,7 +14,6 @@ from datetime import datetime, date, timedelta, time
 
 config = {}
 directorio_gtfs = ""
-directorio_geojson = ""
 
 def conectar():
     if not os.environ.get('MONGODB_SERVER_USER') is None:
@@ -607,13 +606,13 @@ def csv_to_list(archivo) -> list:
     return lista
 
 def main():
-    global config, directorio_gtfs, directorio_geojson
+    global config, directorio_gtfs
     start = datetime.now()
     load_dotenv(dotenv_path=Path('./mongodb/mongodb.env'))
     with open('config.json') as f:
         config = json.load(f)
 
-    directorio_gtfs = os.path.join(os.getcwd(), config["directorio_gtfs"])
+    directorio_gtfs = os.path.join(os.getcwd(), config["directorioGTFS"])
 
     cliente = conectar()
     # Limpiar base de datos

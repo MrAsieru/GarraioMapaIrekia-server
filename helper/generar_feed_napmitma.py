@@ -8,7 +8,7 @@ def conseguir_regiones(config: dict) -> List[dict]:
     regiones = {}
 
     url_info = f"https://nap.mitma.es/api/Fichero/"
-    headers = {"ApiKey": config.get("nap_mitma_api_key")}
+    headers = {"ApiKey": config.get("napMitmaApiKey")}
     regiones_request = requests.request("GET", url_info, headers=headers)
     if (regiones_request.status_code == 200):
         regiones_request = regiones_request.json()
@@ -24,7 +24,7 @@ def conseguir_feeds_de_provincias(provincias: List[int], config: dict) -> List[d
     url = "https://nap.mitma.es/api/Fichero/Filter"
 
     payload = {"provincias": provincias}
-    headers = {"ApiKey": config.get("nap_mitma_api_key")}
+    headers = {"ApiKey": config.get("napMitmaApiKey")}
 
     response = requests.request("POST", url, json=payload, headers=headers)
 
