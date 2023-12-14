@@ -1,13 +1,10 @@
 from datetime import datetime
 from pathlib import Path
-import urllib.request
-import zipfile
+import sys
 import os
 import json
 import csv
 from typing import List
-
-from dotenv import load_dotenv
 from pymongo import UpdateOne
 from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
@@ -20,12 +17,7 @@ directorio_geojson = ""
 
 
 def conectar() -> MongoClient:
-    if not os.environ.get('MONGODB_SERVER_USER') is None:
-        # Prod
-        uri = f"mongodb://{os.environ['MONGODB_SERVER_USER']}:{os.environ['MONGODB_SERVER_USER_PASSWORD']}@127.0.0.1:27017/{os.environ['MONGODB_INITDB_DATABASE']}"
-    else:
-        #TODO: Quitar (Solo para pruebas)
-        uri = f"mongodb://serverUser:serverUser@192.168.1.10:27017/gtfs"
+    uri = f"mongodb://{os.environ['MONGODB_SERVER_USER']}:{os.environ['MONGODB_SERVER_USER_PASSWORD']}@mongodb:27017/{os.environ['MONGODB_INITDB_DATABASE']}"
     
     cliente = MongoClient(uri, server_api=ServerApi('1'))
 
@@ -364,13 +356,12 @@ def csv_to_dict(archivo, primary_key: list) -> dict:
 
 def main():
     global config, directorio_gtfs, directorio_geojson
-    load_dotenv(dotenv_path=Path('./mongodb/mongodb.env'))
     start = datetime.now()
-    with open('config.json') as f:
+    with open('/server/config.json') as f:
         config = json.load(f)
 
-    directorio_gtfs = os.path.join(os.getcwd(), config["directorioGTFS"])
-    directorio_geojson = os.path.join(os.getcwd(), config["directorioGeoJson"])
+    directorio_gtfs = os.path.join("/server", config["directorioGTFS"])
+    directorio_geojson = os.path.join("/server", config["directorioGeoJson"])
 
     try:
         os.mkdir(directorio_geojson)
@@ -394,8 +385,10 @@ def main():
         for feed in db["feeds"].find({"actualizar.tiles": True}):
             generar(feed, db["paradas"], db["lineas"], db["agencias"], db["viajes"])
             db["feeds"].update_many({"idFeed": feed["idFeed"]}, {"$set": {"actualizar.tiles": False}})
+            sys.stdout.flush()
     finally:
         print(f"Acabado en {(datetime.now()-start).total_seconds()}s")
+        sys.stdout.flush()
 
 
 if __name__ == '__main__':

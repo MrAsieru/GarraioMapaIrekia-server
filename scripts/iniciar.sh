@@ -1,18 +1,30 @@
 #!/bin/bash
-# Establecer variables de entorno
-source ./mongodb/mongodb.env
+lockfile=/tmp/iniciar.lock
 
-# Descargar datos GTFS
-python ./obtener_gtfs.py
+(
+    if ! flock -n 200; then
+        echo "El script ya está ejecutandose" >&2
+        exit 1
+    fi
 
-# Insertar datos en MongoDB
-python ./gtfs_to_mongodb.py
+    # Establecer variables de entorno
+    source /server/mongodb/mongodb.env
 
-# Generar archivos GeoJSON
-python ./gtfs_to_geojson.py
+    # Descargar datos GTFS
+    python /server/scripts/obtener_gtfs.py
 
-# Generar archivos PMTiles y reiniciar servidor Martin
-sh ./generar_tiles.sh
+    # Insertar datos en MongoDB
+    python /server/scripts/gtfs_to_mongodb.py
 
-# Calcular posiciones
-python ./calcular_posiciones.py
+    # Generar archivos GeoJSON
+    python /server/scripts/gtfs_to_geojson.py
+
+    # Generar archivos PMTiles
+    tippecanoe -z18 -B 10 -f -o /server/tiles/tiles.pmtiles /server/geojson/*.geojson
+
+    # Reiniciar servidor Martin
+    docker restart martin
+
+    # Calcular posiciones
+    python /server/scripts/calcular_posiciones.py
+) 200>${lockfile}

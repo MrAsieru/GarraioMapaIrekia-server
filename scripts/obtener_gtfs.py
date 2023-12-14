@@ -1,6 +1,6 @@
 import hashlib
 from pathlib import Path
-import re
+import sys
 from typing import List
 from pymongo import UpdateOne
 import requests
@@ -14,8 +14,6 @@ from pymongo.mongo_client import MongoClient
 from pymongo.collection import Collection
 from pymongo.server_api import ServerApi
 from pymongo.typings import _DocumentType
-from dotenv import load_dotenv
-
 
 config = {}
 directorio_zip = ""
@@ -146,12 +144,7 @@ class MetodoDescargaNAPMITMA(MetodoDescarga):
 
 
 def conectar() -> MongoClient:
-    if not os.environ.get('MONGODB_SERVER_USER') is None:
-        # Prod
-        uri = f"mongodb://{os.environ['MONGODB_SERVER_USER']}:{os.environ['MONGODB_SERVER_USER_PASSWORD']}@127.0.0.1:27017/{os.environ['MONGODB_INITDB_DATABASE']}"
-    else:
-        #TODO: Quitar (Solo para pruebas)
-        uri = f"mongodb://serverUser:serverUser@192.168.1.10:27017/gtfs"
+    uri = f"mongodb://{os.environ['MONGODB_SERVER_USER']}:{os.environ['MONGODB_SERVER_USER_PASSWORD']}@mongodb:27017/{os.environ['MONGODB_INITDB_DATABASE']}"
     
     cliente = MongoClient(uri, server_api=ServerApi('1'))
 
@@ -286,14 +279,12 @@ def main():
     global config, directorio_zip, directorio_gtfs
     start = datetime.now()
 
-    # Cargar configuración de MongoDB
-    # load_dotenv(dotenv_path=Path('./mongodb/mongodb.env'))
-    with open('config.json') as f:
+    with open('/server/config.json') as f:
         config = json.load(f)
 
     # Obtener y generar directorios
-    directorio_zip = os.path.join(os.getcwd(), config["directorioZip"])
-    directorio_gtfs = os.path.join(os.getcwd(), config["directorioGTFS"])
+    directorio_zip = os.path.join("/server", config["directorioZip"])
+    directorio_gtfs = os.path.join("/server", config["directorioGTFS"])
 
     try:
         os.mkdir(directorio_zip)
@@ -309,18 +300,20 @@ def main():
         db = cliente["gtfs"]
 
     feeds = []
-    with open(os.path.join(os.getcwd(), config["feeds"])) as f:
+    with open(os.path.join("/server", config["feeds"])) as f:
         feeds = json.load(f)
 
     sincronizar_feeds(db["feeds"], feeds)
 
     for feed in db["feeds"].find({"eliminar": {"$ne": True}}):
         actualizar = descargar(feed, config, db["feeds"])
+        sys.stdout.flush()
         if actualizar:
             descomprimir(feed)
             adaptar_datos(feed)
 
     print(f"Acabado en {(datetime.now()-start).total_seconds()}s")
+    sys.stdout.flush()
 
 
 if __name__ == '__main__':
