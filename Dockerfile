@@ -32,4 +32,4 @@ RUN /usr/bin/crontab /etc/cron.d/crontab
 RUN ln -sf /proc/1/fd/1 /var/log/cron.log
 
 # Ejecutar cron
-CMD /server/entrypoint.sh
+ENTRYPOINT /server/entrypoint.sh
