@@ -19,6 +19,8 @@ RUN rm -rf ./tmp/tippecanoe-src
 # Copiar archivos
 WORKDIR /server
 ADD . /server
+RUN chmod 755 scripts/*
+RUN chmod 755 entrypoint.sh
 
 # Instalar paquetes Python
 RUN pip install -r requirements.txt
