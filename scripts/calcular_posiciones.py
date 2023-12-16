@@ -22,7 +22,7 @@ PRECISION_COORDENADAS = 6 # Precisión de las coordenadas
 
 
 def conectar():
-    uri = f"mongodb://{os.environ['MONGODB_SERVER_USER']}:{os.environ['MONGODB_SERVER_USER_PASSWORD']}@mongodb:27017/{os.environ['MONGODB_INITDB_DATABASE']}"
+    uri = f"mongodb://{os.environ['MONGODB_SERVER_USER']}:{os.environ['MONGODB_SERVER_USER_PASSWORD']}@mongodb:27017/gtfs"
     
     cliente = MongoClient(uri, server_api=ServerApi('1'))
 
@@ -405,11 +405,7 @@ def main():
     directorio_gtfs = os.path.join("/server", config["directorioGTFS"])
 
     cliente = conectar()
-    if not os.environ.get('MONGODB_SERVER_USER') is None:
-        db = cliente[os.environ['MONGODB_INITDB_DATABASE']]
-    else:
-        #TODO: Quitar (Solo para pruebas)
-        db = cliente["gtfs"]
+    db = cliente["gtfs"]
 
     # Eliminar posiciones de feeds que se van a actualizar
     feeds_actualizar_ids = db["feeds"].distinct("idFeed", {"$or": [{"actualizar.posiciones": True}, {"eliminar": True}]})

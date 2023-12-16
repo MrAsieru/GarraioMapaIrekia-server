@@ -144,7 +144,7 @@ class MetodoDescargaNAPMITMA(MetodoDescarga):
 
 
 def conectar() -> MongoClient:
-    uri = f"mongodb://{os.environ['MONGODB_SERVER_USER']}:{os.environ['MONGODB_SERVER_USER_PASSWORD']}@mongodb:27017/{os.environ['MONGODB_INITDB_DATABASE']}"
+    uri = f"mongodb://{os.environ['MONGODB_SERVER_USER']}:{os.environ['MONGODB_SERVER_USER_PASSWORD']}@mongodb:27017/gtfs"
     
     cliente = MongoClient(uri, server_api=ServerApi('1'))
 
@@ -294,10 +294,7 @@ def main():
 
     # Conectar a MongoDB
     cliente = conectar()
-    if not os.environ.get('MONGODB_SERVER_USER') is None:
-        db = cliente[os.environ['MONGODB_INITDB_DATABASE']]
-    else:
-        db = cliente["gtfs"]
+    db = cliente["gtfs"]
 
     feeds = []
     with open(os.path.join("/server", config["feeds"])) as f:
