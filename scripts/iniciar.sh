@@ -7,9 +7,6 @@ lockfile=/tmp/iniciar.lock
         exit 1
     fi
 
-    # Establecer variables de entorno
-    source /server/mongodb/mongodb.env
-
     # Descargar datos GTFS
     python /server/scripts/obtener_gtfs.py
 
