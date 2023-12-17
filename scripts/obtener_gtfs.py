@@ -1,5 +1,4 @@
 import hashlib
-from pathlib import Path
 import sys
 from typing import List
 from pymongo import UpdateOne
@@ -16,8 +15,8 @@ from pymongo.server_api import ServerApi
 from pymongo.typings import _DocumentType
 
 config = {}
-directorio_zip = ""
-directorio_gtfs = ""
+directorio_zip = "/server/zip"
+directorio_gtfs = "/server/gtfs"
 archivos_agency_id = ["agency.txt", "routes.txt", "fare_attributes.txt"] # Archivos que utilizan agency_id (No se incluye attributions)
 
 
@@ -182,7 +181,7 @@ def sincronizar_feeds(colleccion_feeds: Collection[_DocumentType], file_feeds: L
         colleccion_feeds.insert_many(feeds_nuevos)
 
 
-def descargar(feed: dict, config: dict, db_feeds: Collection[_DocumentType]) -> bool:
+def descargar(feed: dict, db_feeds: Collection[_DocumentType]) -> bool:
     actualizar = False
     archivo_zip = os.path.join(directorio_zip, feed["idFeed"]+".zip")
     print(feed["idFeed"])
@@ -282,10 +281,7 @@ def main():
     with open('/server/config.json') as f:
         config = json.load(f)
 
-    # Obtener y generar directorios
-    directorio_zip = os.path.join("/server", config["directorioZip"])
-    directorio_gtfs = os.path.join("/server", config["directorioGTFS"])
-
+    # Generar directorios
     try:
         os.mkdir(directorio_zip)
         os.mkdir(directorio_gtfs)
@@ -297,13 +293,13 @@ def main():
     db = cliente["gtfs"]
 
     feeds = []
-    with open(os.path.join("/server", config["feeds"])) as f:
+    with open("/server/feeds.json") as f:
         feeds = json.load(f)
 
     sincronizar_feeds(db["feeds"], feeds)
 
     for feed in db["feeds"].find({"eliminar": {"$ne": True}}):
-        actualizar = descargar(feed, config, db["feeds"])
+        actualizar = descargar(feed, db["feeds"])
         sys.stdout.flush()
         if actualizar:
             descomprimir(feed)

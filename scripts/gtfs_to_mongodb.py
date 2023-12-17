@@ -1,19 +1,14 @@
 import os
-import json
 import csv
 import sys
-from pathlib import Path
-from typing import List
 from pymongo import UpdateOne
 from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
 from pymongo.database import Database
-from pymongo.collection import Collection
 from pymongo.typings import _DocumentType
-from datetime import datetime, date, timedelta, time
+from datetime import datetime, timedelta, time
 
-config = {}
-directorio_gtfs = ""
+directorio_gtfs = "/server/gtfs"
 
 def conectar():
     uri = f"mongodb://{os.environ['MONGODB_SERVER_USER']}:{os.environ['MONGODB_SERVER_USER_PASSWORD']}@mongodb:27017/gtfs"
@@ -28,6 +23,7 @@ def none_si_vacio(valor):
     return valor
 
 def guardar(gtfs, db: Database[_DocumentType]):
+    global directorio_gtfs
     #region Agencia
     lista_agencias = csv_to_dict(os.path.join(directorio_gtfs, gtfs["idFeed"], "agency.txt"), ["agency_id"])
     colleccion_agencias = db["agencias"]
@@ -601,17 +597,11 @@ def csv_to_list(archivo) -> list:
     return lista
 
 def main():
-    global config, directorio_gtfs
     start = datetime.now()
-    with open('/server/config.json') as f:
-        config = json.load(f)
-
-    directorio_gtfs = os.path.join("/server", config["directorioGTFS"])
 
     cliente = conectar()
     db = cliente["gtfs"]
 
-    #TODO: Eliminar documentos que contengan id con el prefijo de los feeds que se deben actualizar
     feeds_eliminar_ids = db["feeds"].distinct("idFeed", {"$or": [{"actualizar.db": True}, {"eliminar": True}]})
     db["feeds"].delete_many({"eliminar": True})
     for colleccion in ["agencias", "lineas", "paradas", "traducciones", "viajes"]:

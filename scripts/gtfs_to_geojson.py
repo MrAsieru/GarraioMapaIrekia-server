@@ -1,5 +1,4 @@
 from datetime import datetime
-from pathlib import Path
 import sys
 import os
 import json
@@ -11,9 +10,8 @@ from pymongo.server_api import ServerApi
 from pymongo.collection import Collection
 from pymongo.typings import _DocumentType
 
-config = {}
-directorio_gtfs = ""
-directorio_geojson = ""
+directorio_gtfs = "/server/gtfs"
+directorio_geojson = "/server/geojson"
 
 
 def conectar() -> MongoClient:
@@ -25,6 +23,7 @@ def conectar() -> MongoClient:
 
 
 def generar(gtfs, db_paradas: Collection[_DocumentType], db_lineas: Collection[_DocumentType], db_agencias: Collection[_DocumentType], db_viajes: Collection[_DocumentType] = None):
+    global directorio_gtfs, directorio_geojson
     geojson = {
         "type": "FeatureCollection",
         "bbox": [],
@@ -355,13 +354,8 @@ def csv_to_dict(archivo, primary_key: list) -> dict:
 
 
 def main():
-    global config, directorio_gtfs, directorio_geojson
+    global directorio_geojson
     start = datetime.now()
-    with open('/server/config.json') as f:
-        config = json.load(f)
-
-    directorio_gtfs = os.path.join("/server", config["directorioGTFS"])
-    directorio_geojson = os.path.join("/server", config["directorioGeoJson"])
 
     try:
         os.mkdir(directorio_geojson)

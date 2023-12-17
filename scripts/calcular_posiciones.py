@@ -2,21 +2,18 @@ import os
 import json
 import csv
 import sys
-from pathlib import Path
 from typing import List
 from pymongo import InsertOne
 from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
 from pymongo.database import Database
-from pymongo.collection import Collection
 from pymongo.typings import _DocumentType
 from datetime import datetime, date, timedelta, time
 from shapely.geometry import LineString, Point
-from shapely import to_geojson
 import pytz
 
 config = {}
-directorio_gtfs = ""
+directorio_gtfs = "/server/gtfs"
 
 PRECISION_COORDENADAS = 6 # Precisión de las coordenadas
 
@@ -30,6 +27,7 @@ def conectar():
 
 
 def calcular(gtfs: dict, db: Database[_DocumentType]):
+    global directorio_gtfs
     if (os.path.exists(os.path.join(directorio_gtfs, gtfs["idFeed"], "shapes.txt"))):
         print(gtfs["idFeed"])
         lista_agencias = csv_to_dict(os.path.join(directorio_gtfs, gtfs["idFeed"], "agency.txt"), ["agency_id"])
@@ -294,6 +292,7 @@ def tiempo_en_parada(parada: dict) -> (int, datetime):
 
 
 def obtener_servicios_fechas(gtfs: dict) -> List[date]:
+    global directorio_gtfs
     if (os.path.exists(os.path.join(directorio_gtfs, gtfs["idFeed"], "calendar.txt"))): 
         lista_calendario = csv_to_list(os.path.join(directorio_gtfs, gtfs["idFeed"], "calendar.txt"))
     else:
@@ -392,7 +391,7 @@ def csv_to_list(archivo) -> list:
 
 
 def main():
-    global config, directorio_gtfs
+    global config
     start = datetime.now()
     with open('/server/config.json') as f:
         config = json.load(f)
@@ -401,8 +400,6 @@ def main():
         print("Calcular posiciones desactivado")
         sys.stdout.flush()
         return
-
-    directorio_gtfs = os.path.join("/server", config["directorioGTFS"])
 
     cliente = conectar()
     db = cliente["gtfs"]
