@@ -17,6 +17,7 @@ from pymongo.typings import _DocumentType
 config = {}
 directorio_zip = "/server/zip"
 directorio_gtfs = "/server/gtfs"
+direcrorio_otp = "/server/otp_gtfs"
 archivos_agency_id = ["agency.txt", "routes.txt", "fare_attributes.txt"] # Archivos que utilizan agency_id (No se incluye attributions)
 
 
@@ -274,6 +275,10 @@ def adaptar_datos(gtfs):
         os.rename(nuevo, original)
 
 
+def comprimir_otp(gtfs):
+    # Comprimir directorio gtfs
+    shutil.make_archive(os.path.join(direcrorio_otp, f"{gtfs['idFeed']}_gtfs"), 'zip', os.path.join(directorio_gtfs, gtfs["idFeed"]))
+
 def main():
     global config, directorio_zip, directorio_gtfs
     start = datetime.now()
@@ -298,12 +303,19 @@ def main():
 
     sincronizar_feeds(db["feeds"], feeds)
 
+    actualizar_alguno = True
     for feed in db["feeds"].find({"eliminar": {"$ne": True}}):
         actualizar = descargar(feed, db["feeds"])
         sys.stdout.flush()
         if actualizar:
+            actualizar_alguno = True
             descomprimir(feed)
             adaptar_datos(feed)
+            comprimir_otp(feed)
+    
+    if actualizar_alguno:
+        # Reiniciar servidor OTP
+        os.system("docker restart opentripplanner")
 
     print(f"Acabado en {(datetime.now()-start).total_seconds()}s")
     sys.stdout.flush()
