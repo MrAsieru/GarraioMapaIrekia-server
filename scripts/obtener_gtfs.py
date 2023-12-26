@@ -209,8 +209,12 @@ def descargar(feed: dict, db_feeds: Collection[_DocumentType]) -> bool:
     return actualizar
 
 
-def conjunto_correcto(conjunto: dict) -> bool:    
-    return conjunto.get("ficherosDto", [{}])[0].get("validado", False)
+def conjunto_correcto(conjunto: dict) -> bool:
+    # Comprobar que ningún aviso es de tipo error
+    for aviso in conjunto.get("ficherosDto", [{}])[0].get("avisos", [{}]):
+        if aviso.get("tipo", "") == "Error":
+            return False
+    return True
 
 
 def descomprimir(gtfs):
