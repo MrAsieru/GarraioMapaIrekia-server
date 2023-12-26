@@ -312,6 +312,15 @@ def main():
             descomprimir(feed)
             adaptar_datos(feed)
             comprimir_otp(feed)
+
+    # Eliminar feeds que se han marcado para eliminar
+    for feed in db["feeds"].find({"eliminar": True}):
+        if os.path.exists(os.path.join(directorio_zip, feed["_id"]+".zip")):
+            os.remove(os.path.join(directorio_zip, feed["_id"]+".zip"))
+        if os.path.exists(os.path.join(directorio_gtfs, feed["_id"])):
+            shutil.rmtree(os.path.join(directorio_gtfs, feed["_id"]))
+        if os.path.exists(os.path.join(direcrorio_otp, f"{feed['_id']}_gtfs.zip")):
+            os.remove(os.path.join(direcrorio_otp, f"{feed['_id']}_gtfs.zip"))
     
     if actualizar_alguno:
         # Reiniciar servidor OTP
