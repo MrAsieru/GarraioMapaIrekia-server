@@ -283,6 +283,10 @@ def tiempo_en_parada(parada: dict) -> (int, datetime):
         hora_llegada = datetime(year=1970, month=1, day=1, hour=int(hora_llegada[0]) % 24, minute=int(hora_llegada[1]), second=int(hora_llegada[2])) + timedelta(days=int(hora_llegada[0]) // 24)
         hora_salida = datetime(year=1970, month=1, day=1, hour=int(hora_salida[0]) % 24, minute=int(hora_salida[1]), second=int(hora_salida[2])) + timedelta(days=int(hora_salida[0]) // 24)
         duracion = hora_salida - hora_llegada
+        
+        if hora_salida < hora_llegada:
+            # Si la hora de salida se produce antes que la de llegada
+            raise Exception("Tiempo en parada negativo")
         return duracion.seconds, hora_llegada
     else:
         return 0, None
