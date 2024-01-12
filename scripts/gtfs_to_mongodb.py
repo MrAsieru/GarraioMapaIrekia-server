@@ -615,14 +615,14 @@ def main():
     # })
     # db["calendario"].delete_many({"servicios": []})
 
-    try:
-        for feed in db["feeds"].find({"actualizar.db": True}):
+    for feed in db["feeds"].find({"actualizar.db": True}):
+        try:
             print(f"Subiendo {feed['idFeed']}...")
-            sys.stdout.flush()
             guardar(feed, db)
-    finally:
-        print(f"Acabado en {(datetime.now()-start).total_seconds()}s")
-        sys.stdout.flush()
+        finally:
+            pass
+
+    print(f"Acabado en {(datetime.now()-start).total_seconds()}s")
 
 
 if __name__ == '__main__':

@@ -409,12 +409,12 @@ def main():
     ids_agencias = db["agencias"].distinct("_id", {"_id": {"$regex": f"^({('|'.join(feeds_actualizar_ids))})_"}})
     db["posiciones"].delete_many({"idAgencia": {"$in": ids_agencias}})
 
-    try:
-        for feed in db["feeds"].find({'$and': [{'actualizar.posiciones': True}, {'$nor': [{'calcularPosiciones': False}]}]}):
+    for feed in db["feeds"].find({'$and': [{'actualizar.posiciones': True}, {'$nor': [{'calcularPosiciones': False}]}]}):
+        try:
             calcular(feed, db)
-    finally:
-        print(f"Acabado en {(datetime.now()-start).total_seconds()}s")
-        sys.stdout.flush()
+        finally:
+            pass
+    print(f"Acabado en {(datetime.now()-start).total_seconds()}s")
 
 
 if __name__ == '__main__':

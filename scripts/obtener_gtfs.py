@@ -308,22 +308,27 @@ def main():
 
     actualizar_alguno = True
     for feed in db["feeds"].find({"eliminar": {"$ne": True}}):
-        actualizar = descargar(feed, db["feeds"])
-        sys.stdout.flush()
-        if actualizar:
-            actualizar_alguno = True
-            descomprimir(feed)
-            adaptar_datos(feed)
-            comprimir_otp(feed)
+        try:
+            actualizar = descargar(feed, db["feeds"])
+            if actualizar:
+                actualizar_alguno = True
+                descomprimir(feed)
+                adaptar_datos(feed)
+                comprimir_otp(feed)
+        finally:
+            pass
 
     # Eliminar feeds que se han marcado para eliminar
     for feed in db["feeds"].find({"eliminar": True}):
-        if os.path.exists(os.path.join(directorio_zip, feed["_id"]+".zip")):
-            os.remove(os.path.join(directorio_zip, feed["_id"]+".zip"))
-        if os.path.exists(os.path.join(directorio_gtfs, feed["_id"])):
-            shutil.rmtree(os.path.join(directorio_gtfs, feed["_id"]))
-        if os.path.exists(os.path.join(direcrorio_otp, f"{feed['_id']}_gtfs.zip")):
-            os.remove(os.path.join(direcrorio_otp, f"{feed['_id']}_gtfs.zip"))
+        try:
+            if os.path.exists(os.path.join(directorio_zip, feed["_id"]+".zip")):
+                os.remove(os.path.join(directorio_zip, feed["_id"]+".zip"))
+            if os.path.exists(os.path.join(directorio_gtfs, feed["_id"])):
+                shutil.rmtree(os.path.join(directorio_gtfs, feed["_id"]))
+            if os.path.exists(os.path.join(direcrorio_otp, f"{feed['_id']}_gtfs.zip")):
+                os.remove(os.path.join(direcrorio_otp, f"{feed['_id']}_gtfs.zip"))
+        finally:
+            pass
     
     if actualizar_alguno:
         # Reiniciar servidor OTP

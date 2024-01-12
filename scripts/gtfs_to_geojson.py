@@ -371,13 +371,15 @@ def main():
         except FileNotFoundError:
             pass
     
-    try:
-        for feed in db["feeds"].find({"actualizar.tiles": True}):
+    for feed in db["feeds"].find({"actualizar.tiles": True}):
+        try:
             generar(feed, db["paradas"], db["lineas"], db["agencias"], db["viajes"])
             db["feeds"].update_many({"idFeed": feed["idFeed"]}, {"$set": {"actualizar.tiles": False}})
-            sys.stdout.flush()
+        finally:
+            pass
 
-        for feed in db["feeds"].find({"eliminar": True}):
+    for feed in db["feeds"].find({"eliminar": True}):
+        try:
             db["feeds"].delete_one({"idFeed": feed["idFeed"]})
             db["paradas"].delete_many({"idFeed": feed["idFeed"]})
             db["lineas"].delete_many({"idFeed": feed["idFeed"]})
@@ -385,9 +387,10 @@ def main():
             db["viajes"].delete_many({"idFeed": feed["idFeed"]})
             if os.path.exists(os.path.join(directorio_geojson, feed["idFeed"]+".geojson")):
                 os.remove(os.path.join(directorio_geojson, feed["idFeed"]+".geojson"))
-    finally:
-        print(f"Acabado en {(datetime.now()-start).total_seconds()}s")
-        sys.stdout.flush()
+        finally:
+            pass
+
+    print(f"Acabado en {(datetime.now()-start).total_seconds()}s")
 
 
 if __name__ == '__main__':
