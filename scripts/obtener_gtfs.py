@@ -1,5 +1,4 @@
 import hashlib
-import sys
 from typing import List
 from pymongo import UpdateOne
 import requests
@@ -331,7 +330,6 @@ def main():
         os.system("docker restart opentripplanner")
 
     print(f"Acabado en {(datetime.now()-start).total_seconds()}s")
-    sys.stdout.flush()
 
 
 if __name__ == '__main__':

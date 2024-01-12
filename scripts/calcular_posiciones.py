@@ -1,7 +1,6 @@
 import os
 import json
 import csv
-import sys
 from typing import List
 from pymongo import InsertOne
 from pymongo.mongo_client import MongoClient
@@ -99,10 +98,8 @@ def calcular(gtfs: dict, db: Database[_DocumentType]):
                 for i in range(0, len(lista_update), tamano_batch):
                     db["posiciones"].bulk_write(lista_update[i:i+tamano_batch])
                 print(f"\t\tSubido en {(datetime.now()-inicio_subida).total_seconds()}s")
-                sys.stdout.flush()
             
         print(f"\tCalculado en {(datetime.now()-inicio_calculos).total_seconds()}s")
-        sys.stdout.flush()
 
     db["feeds"].update_one({"_id": gtfs["idFeed"]}, {"$set": {"actualizar.posiciones": False}})
 
@@ -398,7 +395,6 @@ def main():
 
     if not config.get("calcularPosiciones", True):
         print("Calcular posiciones desactivado")
-        sys.stdout.flush()
         return
 
     cliente = conectar()

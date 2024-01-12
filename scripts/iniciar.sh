@@ -8,13 +8,13 @@ lockfile=/tmp/iniciar.lock
     fi
 
     # Descargar datos GTFS
-    python /server/scripts/obtener_gtfs.py
+    python -u /server/scripts/obtener_gtfs.py
 
     # Insertar datos en MongoDB
-    python /server/scripts/gtfs_to_mongodb.py
+    python -u /server/scripts/gtfs_to_mongodb.py
 
     # Generar archivos GeoJSON
-    python /server/scripts/gtfs_to_geojson.py
+    python -u /server/scripts/gtfs_to_geojson.py
 
     # Generar archivos PMTiles
     tippecanoe -z18 -B 10 -f -o /server/tiles/tiles.pmtiles /server/geojson/*.geojson
@@ -23,5 +23,5 @@ lockfile=/tmp/iniciar.lock
     docker restart martin
 
     # Calcular posiciones
-    python /server/scripts/calcular_posiciones.py
+    python -u /server/scripts/calcular_posiciones.py
 ) 200>${lockfile}
