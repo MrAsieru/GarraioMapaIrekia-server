@@ -16,6 +16,7 @@ from pymongo.typings import _DocumentType
 config = {}
 directorio_zip = "/server/zip"
 directorio_gtfs = "/server/gtfs"
+directorio_geojson = "/server/geojson"
 direcrorio_otp = "/server/otp_gtfs"
 archivos_agency_id = ["agency.txt", "routes.txt", "fare_attributes.txt"] # Archivos que utilizan agency_id (No se incluye attributions)
 
@@ -325,6 +326,8 @@ def main():
                 os.remove(os.path.join(directorio_zip, feed["_id"]+".zip"))
             if os.path.exists(os.path.join(directorio_gtfs, feed["_id"])):
                 shutil.rmtree(os.path.join(directorio_gtfs, feed["_id"]))
+            if os.path.exists(os.path.join(directorio_geojson, f"{feed['_id']}.geojson")):
+                os.remove(os.path.join(directorio_geojson, f"{feed['_id']}.geojson"))
             if os.path.exists(os.path.join(direcrorio_otp, f"{feed['_id']}_gtfs.zip")):
                 os.remove(os.path.join(direcrorio_otp, f"{feed['_id']}_gtfs.zip"))
         finally:
