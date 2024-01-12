@@ -166,14 +166,16 @@ def sincronizar_feeds(colleccion_feeds: Collection[_DocumentType], file_feeds: L
         # Get existing fuentes from DB
         fuentes_db = colleccion_feeds.find_one({"_id": feed}, {"fuentes": 1})
         
-        fuentes_nuevas = []
-        for fuente in file_feeds[file_feeds_idFeeds.index(feed)]["fuentes"]:
-            if len(tmp := list(filter(lambda x: x.get("url", 0) == fuente.get("url", 1) or x.get("conjuntoDatoId", 0) == fuente.get("conjuntoDatoId", 1), fuentes_db["fuentes"]))) > 0:
-                fuentes_nuevas.append(tmp[0])
-            else:
-                fuentes_nuevas.append(fuente)
-
-        colleccion_feeds.update_many({"_id": feed}, {"$set": {"fuentes": fuentes_nuevas}})
+        try:
+            fuentes_nuevas = []
+            for fuente in file_feeds[file_feeds_idFeeds.index(feed)]["fuentes"]:
+                if len(tmp := list(filter(lambda x: x.get("url", 0) == fuente.get("url", 1) or x.get("conjuntoDatoId", 0) == fuente.get("conjuntoDatoId", 1), fuentes_db["fuentes"]))) > 0:
+                    fuentes_nuevas.append(tmp[0])
+                else:
+                    fuentes_nuevas.append(fuente)
+            colleccion_feeds.update_many({"_id": feed}, {"$set": {"fuentes": fuentes_nuevas}})
+        except ValueError:
+            pass       
 
     # Añadir feeds que no existen en la base de datos
     if len(feeds_nuevos) > 0:
